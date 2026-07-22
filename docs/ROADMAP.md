@@ -15,7 +15,7 @@ corner**, not promises.
 > multi-page, fancy connectors, full GUI).
 
 Extensibility lands as **seams** in [ARCHITECTURE.md](ARCHITECTURE.md) and
-workload split in [HITL.md](HITL.md).
+human-in-the-loop workload split in [HITL.md](HITL.md).
 
 ---
 
@@ -69,7 +69,7 @@ auto reverse-engineering of pin sides from silkscreen, perf optimisation.
 - [x] Library API `render(md, options)` (`src/index.js`)
 - [x] Second fixture `table02` + `art02` + `golden02` + selftest
 - [x] License MIT + `package.json`
-- [x] STATUS / HITL docs; skill framed as thin client
+- [x] STATUS / human-in-the-loop docs; skill framed as thin client
 - [ ] Cleaner CLI errors
 - [ ] Push GitHub remote / fix `package.json` repository URL
 
@@ -79,7 +79,7 @@ Deferred board detail: [TODO.md](TODO.md) (`table03+`).
 
 ## Phase 3 — Layout sidecar (next product bar)
 
-See [HITL.md](HITL.md). Goal: table + **layout YAML** → route/paint → art
+See [HITL.md](HITL.md) (human-in-the-loop). Goal: table + **layout YAML** → route/paint → art
 close to `art02` without heroic auto-place.
 
 - [ ] Define layout document schema (positions, optional pinOrder/sides)

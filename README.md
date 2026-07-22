@@ -10,8 +10,8 @@ Electrical connectivity lives in a human-readable **Markdown table** (the
 source of truth). Geometry is still largely automatic today (heuristic
 bootstrap). The direction of travel is a cleaner split: computers draw boxes
 and route wires; humans own hard placement via a layout sidecar (and maybe a
-browser editor later). See [docs/HITL.md](docs/HITL.md) and
-[docs/STATUS.md](docs/STATUS.md).
+browser editor later). See [docs/HITL.md](docs/HITL.md) (human-in-the-loop)
+and [docs/STATUS.md](docs/STATUS.md).
 
 ```
 User intent
@@ -85,7 +85,7 @@ asciiWiring/
 | Doc | Read it for |
 |-----|-------------|
 | [docs/STATUS.md](docs/STATUS.md) | Where we are: tool vs skill |
-| [docs/HITL.md](docs/HITL.md) | Human vs computer; browser optional |
+| [docs/HITL.md](docs/HITL.md) | Human-in-the-loop (HITL): who places vs draws |
 | [docs/SPEC.md](docs/SPEC.md) | Table language (normative) |
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Pipeline seams |
 | [docs/ROADMAP.md](docs/ROADMAP.md) | Phases |
@@ -112,7 +112,7 @@ Requires Node ≥ 18 (no npm dependencies today).
 2. **Tool ≠ skill.** Library/CLI is the product; skill is optional UX for LLMs.
 3. **Deterministic paint** given a netlist + layout.
 4. **Domain genre:** module wiring / block diagrams — not full EDA.
-5. **HITL for placement** when auto bootstrap isn’t enough ([HITL.md](docs/HITL.md)).
+5. **Human-in-the-loop placement** when auto bootstrap isn’t enough ([HITL.md](docs/HITL.md)).
 6. **Docs-native:** Markdown in, ASCII out, diff-friendly.
 
 ## Out of scope

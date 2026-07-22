@@ -34,7 +34,7 @@ We outgrew “only a skill.” Keep the skill draft, but develop and version
   - `table01` / `art01` / `golden01` — ESP32 + OLED + button + pullup  
   - `table02` / `art02` / `golden02` — pump controller **module-level**  
 - **CLI:** `node src/render.js`, `--debug`, `node src/selftest.js`  
-- **Docs:** SPEC, ARCHITECTURE, ROADMAP, TODO, HITL, AGENTS, README  
+- **Docs:** SPEC, ARCHITECTURE, ROADMAP, TODO, HITL (human-in-the-loop), AGENTS, README  
 
 ## What works path-wise today
 
@@ -51,7 +51,7 @@ not guaranteed art-director output — especially off-spine stacks.
 
 | Item | Notes |
 |------|--------|
-| Perfect auto placement | Bridge too far for pure heuristics; see HITL.md |
+| Perfect auto placement | Bridge too far for pure heuristics; see HITL.md (human-in-the-loop) |
 | Layout sidecar file | Next geometry SoT (planned) |
 | Browser floorplan | Optional editor *for that file*, not required day-one |
 | Feedthrough TBs / NTC expand | `docs/TODO.md` — table03+ language |
@@ -61,7 +61,7 @@ not guaranteed art-director output — especially off-spine stacks.
 ## Parallel tracks (don’t confuse them)
 
 1. **Tool core** — IR freeze, glyph/route/paint, layout document, tests  
-2. **HITL geometry** — sidecar → diagnostics → maybe browser ([HITL.md](HITL.md))  
+2. **Human-in-the-loop geometry** — sidecar → diagnostics → maybe browser ([HITL.md](HITL.md))  
 3. **Language growth** — feedthrough, exterior labels ([TODO.md](TODO.md))  
 4. **Skill** — table workflow only; invoke tool  
 
@@ -87,7 +87,7 @@ not guaranteed art-director output — especially off-spine stacks.
 | [README.md](../README.md) | Public entry |
 | [docs/SPEC.md](SPEC.md) | Table language |
 | [docs/ARCHITECTURE.md](ARCHITECTURE.md) | Pipeline seams |
-| [docs/HITL.md](HITL.md) | Human vs computer geometry |
+| [docs/HITL.md](HITL.md) | Human-in-the-loop (HITL): who places vs draws |
 | [docs/ROADMAP.md](ROADMAP.md) | Phased work |
 | [docs/TODO.md](TODO.md) | Deferred language/features |
 | [AGENTS.md](../AGENTS.md) | Contributor / agent norms |

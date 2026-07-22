@@ -1,4 +1,8 @@
-# Human-in-the-loop: where effort should go
+# Human-in-the-loop (HITL): where effort should go
+
+**HITL** = **human-in-the-loop** — keep a person in the workflow for the
+parts they’re better at (here: spatial placement / “does this read?”),
+while the computer does mechanical draw/route/regen.
 
 **Status:** design discussion (2026-04). Not a commitment to a browser UI.
 
@@ -55,7 +59,7 @@ So the bottleneck is not “draw a box” or even “draw a wire.” It is
 **Verdict:** excellent *fit* for strengths; not automatically the *first*
 HITL feature to build — but a strong target architecture.
 
-## Smaller HITL options (often enough)
+## Smaller human-in-the-loop options (often enough)
 
 Ranked roughly by implementation cost × leverage. Mix-and-match.
 
@@ -116,7 +120,7 @@ banks: { ADS1115: { right: [AIN0, AIN1, AIN2, AIN3] } }
 
 More “skill-native” (LLM can draft constraints). Weaker when only nudges work.
 
-### D. Enlarge the computer’s pre-HITL competence (diminishing returns)
+### D. Enlarge the computer’s pre–human-in-the-loop competence (diminishing returns)
 
 Slightly better spine, attach branches under correct hosts, reserved stub
 corridors, etc. **Do this freely when cheap**; stop when adding rules only
@@ -136,7 +140,7 @@ Route live; save YAML; export ASCII.
 - Re-aligning shared I2C channels by hand when both ends moved  
 - Re-deriving hop vs join glyphs  
 
-If HITL requires that, we designed the seam wrong.
+If “human in the loop” requires that busywork, we designed the seam wrong.
 
 ## Implied product loop (tool + optional skill)
 

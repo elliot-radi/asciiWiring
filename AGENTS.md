@@ -25,7 +25,7 @@ Until then: **all development happens in this project directory.**
 |-----|-----|
 | [README.md](README.md) | Public project overview |
 | [docs/STATUS.md](docs/STATUS.md) | Tool vs skill; what is solid |
-| [docs/HITL.md](docs/HITL.md) | Human vs computer workload |
+| [docs/HITL.md](docs/HITL.md) | Human-in-the-loop (HITL): who places vs draws |
 | [docs/SPEC.md](docs/SPEC.md) | Normative table language |
 | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Pipeline seams |
 | [docs/ROADMAP.md](docs/ROADMAP.md) / [TODO.md](docs/TODO.md) | Phases + deferred |
