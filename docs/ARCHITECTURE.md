@@ -1,78 +1,78 @@
 # Architecture
 
-**Status:** draft — guides implementation and keeps future features from
-wrecking v1.  
-**Companion:** [SPEC.md](SPEC.md), [ROADMAP.md](ROADMAP.md)
+**Status:** draft — guides the **tool** implementation.  
+**Companions:** [SPEC.md](SPEC.md), [HITL.md](HITL.md), [STATUS.md](STATUS.md),
+[ROADMAP.md](ROADMAP.md)
+
+Product: Node library + CLI. Optional pi skill only drafts tables and invokes
+the tool (`skill/SKILL.md`) — it is not the placer.
 
 ---
 
 ## 1. Problem framing
 
-We convert a **connectivity matrix** into monospaced **wiring art**.
+We convert a **connectivity matrix** into monospaced **wiring art**, with
+geometry increasingly split between bootstrap auto-place and human-owned
+layout documents ([HITL.md](HITL.md)).
 
-That is the same *product* pattern as Mermaid (text description → diagram),
-with different *domain geometry*:
+Same *pattern* as Mermaid (text → diagram), different *domain*:
 
 | Mermaid flowchart | asciiWiring |
 |-------------------|-------------|
 | Nodes + directed edges | Components + **nets (hyperedges)** + ports |
-| Generic rank/order layout | Genre layout: **bus / branch / passive** |
+| Generic rank/order layout | Genre place + route (bootstrap: bus/branch/passive) |
 | SVG paint | Character grid paint |
-| Author writes topology | Author writes **incidence table** (also documentation) |
+| Author writes topology | Author writes **incidence table** (+ optional layout file) |
 
 We borrow Mermaid’s **discipline**, not its flowchart ontology or layout engines.
 
 ### 1.1 Discipline we keep
 
-1. **Authors never assign coordinates.**
-2. **Parse is separate from layout is separate from paint.**
+1. **No coordinates in the connectivity table.** Placement may live in a
+   separate layout document (human-in-the-loop), not in pin cells.
+2. **Parse → model → place/route → paint** are separate stages (route may still
+   be fused with place in code today).
 3. **One genre done well** before a toolbox of genres.
-4. **Presentation config ≠ content.**
-5. **Fixtures beat opinions** (tableNN → artNN).
-6. **Determinism** so docs and tests stay calm.
+4. **Presentation / placement ≠ electrical content.**
+5. **Fixtures beat opinions** (tableNN + artNN/goldenNN).
+6. **Determinism** given the same netlist + layout inputs.
 
-### 1.2 Discipline we reject (for v1)
+### 1.2 Discipline we reject
 
-- Dropping Dagre/ELK in as the primary placer (continuous graph layout vs
-  integer wire channels is a mismatch).
-- Encoding drawing instructions in the connectivity table.
-- User-facing JSON as the workflow interface.
+- Dagre/ELK as the primary placer (wrong geometry for character channels).
+- Drawing instructions smuggled into the connectivity table.
+- User-facing JSON *instead of* the Markdown table (internal IR is fine).
+- Treating bootstrap `spine-v1` alone as the long-term quality bar.
 
 ---
 
 ## 2. End-to-end pipeline
 
 ```
-                    ┌─────────────────────────────────────────┐
-  Markdown file ──► │ 1. PARSE       Table + footnotes (+fm)  │
-                    └───────────────┬─────────────────────────┘
+  Markdown table (+ footnotes)
+           │
+           ▼
+     1. PARSE ──► 2. MODEL (netlist IR) ──► 3. CLASSIFY (roles)
+                                                    │
+                    ┌───────────────────────────────┤
+                    ▼                               ▼
+     4a. BOOTSTRAP PLACE               4b. LAYOUT DOCUMENT (HITL path)
+         (spine-v1 today)                  sidecar YAML / future browser
+                    │                               │
+                    └───────────────┬───────────────┘
                                     ▼
-                    ┌─────────────────────────────────────────┐
-                    │ 2. MODEL     Electrical IR (netlist)    │
-                    │    nets, components, ports, flags       │
-                    └───────────────┬─────────────────────────┘
+                    5. ROUTE (ortho + join/hop)   [fused with place today]
                                     ▼
-                    ┌─────────────────────────────────────────┐
-                    │ 3. CLASSIFY  Roles (bus/branch/passive) │
-                    └───────────────┬─────────────────────────┘
-                                    ▼
-                    ┌─────────────────────────────────────────┐
-                    │ 4. LAYOUT      Policy → LayoutPlan      │
-                    │    box rects, port points, wire routes, │
-                    │    free labels, optional pages          │
-                    └───────────────┬─────────────────────────┘
-                                    ▼
-                    ┌─────────────────────────────────────────┐
-                    │ 5. PAINT       Glyph profile → Grid     │
-                    └───────────────┬─────────────────────────┘
+                    6. PAINT (glyph profile → character grid)
                                     ▼
                                ASCII string
 ```
 
-Each stage is pure data in → data out (plus diagnostics).  
-CLI only: read file/stdin, print art/stderr.
+Each stage is pure data in → data out (plus diagnostics).
+CLI: read file/stdin, print art/stderr.
 
-Internal JSON/objects are fine. They are **not** the author interface.
+Internal objects/JSON are fine. They are **not** a replacement for the table.
+Layout sidecars are geometry-only companions to the table, not a second netlist.
 
 ---
 
@@ -134,8 +134,8 @@ Port      {
 
 - Every non-empty cell ↔ exactly one port.
 - Port net membership is the only connectivity truth.
-- No coordinates.
-- No glyph choices.
+- No coordinates in the **netlist** (geometry only in LayoutPlan / layout docs).
+- No glyph choices in the netlist.
 
 This netlist should still make sense if we later emit SVG, Graphviz, or KiCad
 notes. It is the **stable semantic core**.
@@ -152,15 +152,16 @@ Role = "bus" | "branch" | "passive" | "other"
 Pure functions of incidence patterns (SPEC §8).  
 Layout reads roles; paint does not need them.
 
-### 3.4 Layout
+### 3.4 Place + route → LayoutPlan
 
-**In:** classified `Netlist` + `LayoutOptions`.  
-**Out:** `LayoutPlan`.
+**In:** classified `Netlist` + `LayoutOptions` (+ optional layout document).  
+**Out:** `LayoutPlan` (integer cell geometry, ready to paint).
 
 ```
 LayoutOptions {
-  policy: "spine-v1"        // only v1 policy
-  // future: channel spacing, direction, page width, fold buses, …
+  policy: "spine-v1" | "from-document"  // bootstrap vs HITL sidecar
+  layoutDocument?: object               // future: positions, pinOrder, sides
+  // channel spacing, page width, fold buses, …
 }
 
 LayoutPlan {
@@ -186,7 +187,7 @@ Segment  { x1,y1,x2,y2 }    // axis-aligned
 
 Coordinates are **integer character cells**.
 
-#### Policy `spine-v1` (only policy for acceptance)
+#### Policy `spine-v1` (bootstrap placer — implemented)
 
 1. Place **bus** boxes left→right (respect column order when possible).
 2. Choose a **channel stack** for nets used on the backbone (reorder allowed).
@@ -200,8 +201,10 @@ Coordinates are **integer character cells**.
 9. Prefer routes that need no hops when cheap; when a stem must cross a
    foreign backbone run, emit an insulated hop (not a join).
 
-`spine-v1` is deliberately limited. Harder boards become new policies
-(`spine-v2`, `multi-row`, `paged`), not conditionals sprinkled through paint.
+`spine-v1` is deliberately limited. It is a **bootstrap**, not the quality
+ceiling (see table02). Harder packing → layout document + human edit
+([HITL.md](HITL.md)), not endless new spine heuristics. Optional future auto
+policies (`multi-row`, `paged`) must not block the sidecar path.
 
 ### 3.5 Paint
 
@@ -237,7 +240,7 @@ port-kind styling), not a different table language.
 
 ## 4. Module layout (code)
 
-Target shape (names indicative; rewrite may replace spike):
+Current / target shape (names indicative; split place vs route next):
 
 ```
 src/
@@ -246,7 +249,7 @@ src/
   model.js            # Ast → Netlist + validate
   classify.js         # roles
   layout/
-    spine-v1.js       # first policy
+    spine-v1.js       # bootstrap placer (+ fused route today)
     index.js          # pick policy
   paint/
     grid.js           # sparse/dense char buffer helpers
@@ -328,7 +331,7 @@ derivation is classify/layout adjacent; glyphs stay in paint.
 
 ---
 
-## 6. Layout philosophy (`spine-v1`)
+## 6. Layout philosophy (`spine-v1` bootstrap)
 
 Think **channel routing on a character grid**, not force-directed graphs.
 
@@ -406,29 +409,27 @@ No visual SVG diff pipeline needed for v1.
 
 ---
 
-## 9. Skill vs library
+## 9. Tool vs skill
 
 | Piece | Role |
 |-------|------|
-| `src/*` | Deterministic library + CLI |
-| `skill/SKILL.md` | Teaches LLM when/how to write tables and invoke CLI |
-| User repo `HARDWARE.md` | Owns settled tables + committed art |
+| `src/*` | **Tool** — deterministic library + CLI |
+| `skill/SKILL.md` | Optional thin LLM client: table draft + invoke CLI |
+| User `HARDWARE.md` | Owns settled tables + layout (when used) + art |
 
-The skill must not re-implement layout in prose. It stops at table authoring
-quality and renderer invocation.
+The skill must not re-implement place/route in prose.
 
-Install path (`~/.pi/agent/skills/ascii-wiring/`) only after acceptance.
+Install under `~/.pi/agent/skills/` only after the tool + layout loop is pleasant.
 
 ---
 
-## 10. Relationship to current spike
+## 10. Relationship to current code
 
-`src/render.js` was an exploratory spike (parse/classify/layout/paint crushed
-together). Known issues include unclear naming and weak layout quality.
+Pipeline modules exist under `src/` (parse, model, classify, layout/spine-v1,
+paint). Place and route are still largely fused in `spine-v1.js`.
 
-**Rewrite policy:** implement against this document’s stages; keep the spike only
-as reference until `spine-v1` + classic paint pass `table01`. Prefer clean
-pipeline over salvaging tangled helpers.
+**Next structural work:** layout document load + route-from-layout + keep spine
+as bootstrap default ([ROADMAP.md](ROADMAP.md) Phase 3, [HITL.md](HITL.md)).
 
 ---
 
@@ -436,10 +437,11 @@ pipeline over salvaging tangled helpers.
 
 When a change is proposed, ask:
 
-1. Does it alter electrical meaning, or only presentation?
-2. Can it live in IR / policy / paint without new table syntax?
-3. Is there a fixture that will lock the behaviour?
-4. Does it still work if we add a second paint target tomorrow?
-5. Are we inventing general CAD, or covering the wiring-block genre?
+1. Does it alter electrical meaning, or only presentation/placement?
+2. Can it live in IR / place / route / paint / layout-doc without new table syntax?
+3. Is this a human-in-the-loop concern better solved by a layout sidecar ([HITL.md](HITL.md))?
+4. Is there a fixture that will lock the behaviour?
+5. Does it still work if we add a second paint target tomorrow?
+6. Are we inventing general CAD, or covering the wiring-block genre?
 
 If (5) drifts toward CAD, stop and re-read ROADMAP non-goals.

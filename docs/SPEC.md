@@ -1,12 +1,15 @@
 # Specification — wiring table language & v1 semantics
 
-**Status:** draft, normative for v1 intent.  
-**Companion:** [ARCHITECTURE.md](ARCHITECTURE.md), [ROADMAP.md](ROADMAP.md)
+**Status:** draft, normative for **electrical** table language.  
+**Companions:** [ARCHITECTURE.md](ARCHITECTURE.md), [HITL.md](HITL.md),
+[STATUS.md](STATUS.md), [ROADMAP.md](ROADMAP.md)
 
-This document defines the **author-facing language** (the Markdown
-connectivity table) and the **meaning** a correct renderer must preserve.
-It does **not** mandate exact character coordinates; art may vary so long
-as topology, labels, and diagram conventions are satisfied.
+This document defines the **author-facing electrical language** (the Markdown
+connectivity table) and the **meaning** a correct tool must preserve when
+drawing. It does **not** mandate character coordinates. Geometry lives outside
+the table (bootstrap place today; layout sidecar / human-in-the-loop next).
+
+Art may vary so long as topology, labels, and diagram conventions are satisfied.
 
 ---
 
@@ -15,12 +18,14 @@ as topology, labels, and diagram conventions are satisfied.
 1. Represent module-level electrical connectivity without geometry.
 2. Stay readable as documentation on its own (even without art).
 3. Be easy for humans and LLMs to edit iteratively.
-4. Give the renderer enough structure to draw bus / branch / multi-net passive diagrams.
-5. Leave room for richer presentation later **without** breaking table meaning.
+4. Give the **tool** enough structure to build glyphs and routes (bus / branch /
+   multi-net passive diagrams).
+5. Leave room for presentation and placement later **without** breaking table meaning.
 
 ## 2. Non-goals (language)
 
-- Expressing pixel/column coordinates in the table.
+- Expressing pixel/column coordinates **in the connectivity table**
+  (a separate layout document may hold placement; see HITL.md).
 - Full schematic symbols (op-amps, transistor guts, etc.).
 - Netlists for EDA import as a primary goal (export adapters are future).
 - Suspending electrical meaning in favour of arbitrary drawing commands.
@@ -35,9 +40,9 @@ A wiring document is Markdown. The renderer looks for:
 2. Optional **abbreviation footnotes** after the table.
 3. Optional prose before/after (ignored by the renderer except footnotes).
 
-Future: optional YAML frontmatter for **presentation** hints (layout
-policy, glyph set, page breaks). Frontmatter must not change electrical
-meaning. See ARCHITECTURE §7.
+Future: optional YAML frontmatter and/or a **sibling layout file** for
+placement and presentation (glyph set, page breaks, pin sides). Those must
+not change electrical meaning of the table. See ARCHITECTURE and HITL.md.
 
 ### 3.1 Table geometry
 
@@ -199,10 +204,10 @@ ESP32 and OLED is one net with two ports, not a single directed arrow.
 
 ---
 
-## 8. Component roles (layout classification)
+## 8. Component roles (classification)
 
-Roles are **derived**, not authored (v1). They guide layout policy only;
-misclassification must not change the electrical model.
+Roles are **derived**, not authored (v1). They guide bootstrap placement and
+hints for humans; misclassification must not change the electrical model.
 
 | Role | Typical rule (v1 heuristic) | Layout intent |
 |------|----------------------------|---------------|
@@ -224,7 +229,8 @@ Notes:
 ## 9. Rendering semantics (acceptance)
 
 Exact glyphs and coordinates are **not** part of the electrical guarantee.
-A render is acceptable for v1 when a knowledgeable human agrees that:
+Given a netlist (and, when present, a layout), a render is acceptable when a
+knowledgeable human agrees that:
 
 1. **Every named pin** appears labeled on its component box.
 2. **Every fixed net** with ≥2 routed ports shows a continuous connection
