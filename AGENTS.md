@@ -6,7 +6,7 @@ Guidance for humans and coding agents working in this repo.
 
 A **tool** (Node library + CLI) that turns signal-first Markdown wiring
 tables into ASCII module diagrams, plus an optional **pi skill** that only
-teaches table drafting and how to runosexual the tool. See `docs/STATUS.md`.
+teaches table drafting and how to run the tool. See `docs/STATUS.md`.
 
 LLMs should **reliably** produce connectivity tables; geometry is tool +
 human-in-the-loop (see `docs/HITL.md`), not freehand ASCII.
