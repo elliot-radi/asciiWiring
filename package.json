@@ -1,0 +1,31 @@
+{
+  "name": "ascii-wiring",
+  "version": "0.1.0",
+  "description": "Signal-first Markdown wiring tables → ASCII module diagrams",
+  "license": "MIT",
+  "private": true,
+  "bin": {
+    "ascii-wiring": "src/render.js"
+  },
+  "main": "src/index.js",
+  "scripts": {
+    "render": "node src/render.js",
+    "test": "node src/selftest.js",
+    "golden": "node src/render.js examples/table01.md > examples/golden01.md && node src/render.js examples/table02.md > examples/golden02.md"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": [
+    "ascii",
+    "wiring",
+    "schematic",
+    "markdown",
+    "esp32",
+    "diagram"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/TODO/asciiWiring.git"
+  }
+}
