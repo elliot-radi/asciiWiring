@@ -1,7 +1,7 @@
 # Project status
 
 **Snapshot date:** 2026-04  
-**Repo:** local `asciiWiring` (git initialized for GitHub)
+**Repo:** https://github.com/elliot-radi/asciiWiring
 
 ## One-liner
 
