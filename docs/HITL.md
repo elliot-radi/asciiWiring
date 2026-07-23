@@ -71,7 +71,8 @@ a dumb default bank). Human edits a **nested layout sidecar** — one block per
 glyph, not cross-cutting attribute sections.
 
 Checked-in sketch: [`examples/layout02.yaml`](../examples/layout02.yaml)
-(unwired; CLI ignores it until Phase 3 from-document lands).
+(unwired; CLI ignores it until Phase 3 from-document lands). Normative
+schema: [LAYOUT.md](LAYOUT.md).
 
 ```yaml
 # layout02.yaml — face-banked glyph dossiers (draft)
@@ -231,6 +232,8 @@ Following the strengths/options analysis above, current direction:
    all four faces; empties are `[]`). No top-level `pinOrder` / pin→face maps.
    Nested beats three cross-cutting sections for hand-edit and future GUI
    inspectors. Maps still give identity-stable diffs vs component arrays.
+   Normative in [LAYOUT.md](LAYOUT.md) (Mode B: all components required;
+   strict four faces).
 
 ### Target architecture for Option E (when we get there)
 

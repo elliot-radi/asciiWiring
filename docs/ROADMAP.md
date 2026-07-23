@@ -91,8 +91,9 @@ in increments with IR acceptance tests.
 
 - [x] Draft layout schema sketch (nested glyph dossiers + face banks) —
       `examples/layout02.yaml` (unwired); HITL Option A updated
-- [ ] Write short normativish contract (`docs/LAYOUT.md` or HITL freeze):
-      always four faces, pin census = table, edge order rules, errors
+- [x] Write normative contract ([LAYOUT.md](LAYOUT.md)): Mode B (all
+      components required), strict four faces, pin census = table, edge
+      order rules, full error table, reserved keys rejected
 - [ ] Loader/validate layout YAML vs netlist (no place change yet)
 - [ ] Build glyphs + port sites from layout document only
 - [ ] Route + paint from netlist + port sites

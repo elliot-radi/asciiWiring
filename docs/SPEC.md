@@ -2,13 +2,16 @@
 
 **Status:** draft, normative for **electrical** table language.  
 **Companions:** [ARCHITECTURE.md](ARCHITECTURE.md), [HITL.md](HITL.md),
-[GLYPHS.md](GLYPHS.md), [STATUS.md](STATUS.md), [ROADMAP.md](ROADMAP.md)
+[GLYPHS.md](GLYPHS.md), [STATUS.md](STATUS.md), [ROADMAP.md](ROADMAP.md),
+[LAYOUT.md](LAYOUT.md)
 
 This document defines the **author-facing electrical language** (the Markdown
 connectivity table) and the **meaning** a correct tool must preserve when
 drawing. It does **not** mandate character coordinates. Geometry lives outside
 the table (bootstrap `spine-v1` today; nested layout sidecar / HITL next — see
-HITL.md and `examples/layout02.yaml` schema sketch; not CLI-loaded yet).
+[LAYOUT.md](LAYOUT.md) for the schema contract,
+[HITL.md](HITL.md) for workflow, and `examples/layout02.yaml` sketch; not
+CLI-loaded yet).
 
 Art may vary so long as topology, labels, and diagram conventions are satisfied.
 

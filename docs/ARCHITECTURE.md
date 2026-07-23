@@ -2,7 +2,8 @@
 
 **Status:** draft — guides the **tool** implementation.  
 **Companions:** [SPEC.md](SPEC.md), [HITL.md](HITL.md),
-[GLYPHS.md](GLYPHS.md), [STATUS.md](STATUS.md), [ROADMAP.md](ROADMAP.md)
+[GLYPHS.md](GLYPHS.md), [STATUS.md](STATUS.md), [ROADMAP.md](ROADMAP.md),
+[LAYOUT.md](LAYOUT.md)
 
 Product: Node library + CLI. Optional pi skill only drafts tables and invokes
 the tool (`skill/SKILL.md`) — it is not the placer.

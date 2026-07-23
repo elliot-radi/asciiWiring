@@ -18,6 +18,7 @@ Do **not** freehand multi-box ASCII in the LLM. Do **not** treat perfect auto-la
 |-----|------|
 | `docs/STATUS.md` | Orientation / what’s solid |
 | `docs/HITL.md` | Who places vs who draws + layout YAML shape |
+| `docs/LAYOUT.md` | Layout sidecar schema (normative) |
 | `docs/GLYPHS.md` | How components/groups are drawn |
 | `docs/SPEC.md` | Table language (normative) |
 | `docs/ARCHITECTURE.md` | Pipeline seams |

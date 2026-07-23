@@ -1,7 +1,8 @@
 # Glyphs: component drawing conventions
 
-**Status:** design discussion (2026-07). Extends [HITL.md](./HITL.md); normative
-table-language changes belong in [SPEC.md](./SPEC.md), not here.
+**Status:** design discussion (2026-07). Extends [HITL.md](./HITL.md);
+normative table-language changes belong in [SPEC.md](./SPEC.md), not here;
+layout sidecar schema is normative in [LAYOUT.md](./LAYOUT.md).
 
 This doc is the home for *how a component becomes a glyph* — box shape, labeling,
 and composition — as distinct from *where the glyph goes* (HITL.md) or *what's

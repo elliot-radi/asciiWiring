@@ -104,6 +104,7 @@ live in GLYPHS.md (unimplemented). Module rotation remains unspec'd.
 | [docs/SPEC.md](SPEC.md) | Table language |
 | [docs/ARCHITECTURE.md](ARCHITECTURE.md) | Pipeline seams |
 | [docs/HITL.md](HITL.md) | Human-in-the-loop (HITL): who places vs draws |
+| [docs/LAYOUT.md](LAYOUT.md) | Layout sidecar schema (normative) |
 | [docs/GLYPHS.md](GLYPHS.md) | Component drawing, grouping, and orientation conventions |
 | [docs/ROADMAP.md](ROADMAP.md) | Phased work |
 | [docs/TODO.md](TODO.md) | Deferred language/features |

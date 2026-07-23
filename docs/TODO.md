@@ -25,7 +25,8 @@ The vague "NTC expand" bullet is now a real design, see
 ## Layout document (schema + path) — product bar
 
 - [x] Nested face-banked schema sketch committed (`examples/layout02.yaml`)
-- [ ] Normative short write-up (`docs/LAYOUT.md` or HITL freeze)
+- [x] Normative contract ([docs/LAYOUT.md](./LAYOUT.md)): Mode B, strict
+      four faces, pin census, error table, reserved keys rejected
 - [ ] Loader + pin-census validation vs netlist
 - [ ] Glyph/port sites from document; route without spine overlay
 - [ ] CLI `--layout` → `policy: from-document` only
