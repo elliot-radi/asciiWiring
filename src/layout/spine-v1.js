@@ -13,7 +13,12 @@ const {
 const GAP_BUSES = 9;
 const STEM_RUN = 4;
 
-function layoutSpineV1(netlist) {
+function layoutSpineV1(netlist, layoutDoc = null) {
+  // Extract layout overrides if provided
+  const components = layoutDoc?.components || {};
+  const pinOrders = layoutDoc?.pinOrder || {};
+  const sides = layoutDoc?.sides || {};
+  const hasLayout = layoutDoc !== null;
   const byRole = (role) =>
     netlist.components.filter((c) => netlist.roles[c.id] === role);
 
@@ -51,10 +56,13 @@ function layoutSpineV1(netlist) {
   for (let bi = 0; bi < buses.length; bi++) {
     const bus = buses[bi];
     const meta = boxMeta[bus.id];
+    
+    // Use layout position if provided, otherwise auto-place
+    const layoutPos = components[bus.name];
     const box = {
       componentId: bus.id,
-      x,
-      y: 0,
+      x: hasLayout && layoutPos ? layoutPos.x : x,
+      y: hasLayout && layoutPos ? layoutPos.y : 0,
       w: meta.w,
       h: meta.h,
       title: bus.name,
@@ -65,12 +73,16 @@ function layoutSpineV1(netlist) {
     for (const p of meta.ports) {
       const py = netY[p.netId];
       if (py == null) continue;
-      const side = sideForBusPort(buses, busIds, bi, p, netlist);
+      const side = hasLayout 
+        ? (sides[bus.name]?.[p.label || p.id] || sideForBusPort(buses, busIds, bi, p, netlist))
+        : sideForBusPort(buses, busIds, bi, p, netlist);
       const px = side === 'E' ? box.x + box.w - 1 : box.x;
       portGeom.push({ portId: p.id, x: px, y: py, side, marker: '●' });
       if (p.label) portLabels[p.id] = p.label;
     }
-    x += meta.w + GAP_BUSES;
+    
+    // Update x only for non-layout mode
+    if (!hasLayout) x += meta.w + GAP_BUSES;
   }
 
   for (const net of netlist.nets) {
@@ -104,6 +116,10 @@ function layoutSpineV1(netlist) {
     wires,
     labels,
     portLabels,
+    hasLayout,
+    components,
+    pinOrders,
+    sides,
   });
 
   layoutDanglingStubs({ netlist, portGeom, wires, labels });
@@ -237,6 +253,10 @@ function layoutBranchesAndPassives(ctx) {
     wires,
     labels,
     portLabels,
+    hasLayout,
+    components,
+    pinOrders,
+    sides,
   } = ctx;
 
   const hostBottom = {};
@@ -299,6 +319,10 @@ function placeBranchModule(ctx) {
     labels,
     portLabels,
     hostBottom,
+    hasLayout,
+    components,
+    pinOrders,
+    sides,
   } = ctx;
 
   const bPorts = portsForComponent(netlist, branch.id);
@@ -371,6 +395,19 @@ function placeBranchModule(ctx) {
   const innerW = Math.max(title.length + 4, maxEast + 5, stemLab.length + 4, 10);
   const brW = innerW + 2;
 
+  // Apply pinOrder if provided
+  const branchPinOrder = hasLayout ? (pinOrders[branch.name] || null) : null;
+  if (branchPinOrder) {
+    const orderedPorts = branchPinOrder.map(name =>
+      eastCandidates.find(p => p.label === name)
+    ).filter(Boolean);
+    // Add any remaining ports not in pinOrder
+    const orderedIds = new Set(orderedPorts.map(p => p.id));
+    const remaining = eastCandidates.filter(p => !orderedIds.has(p.id));
+    eastCandidates.length = 0;
+    eastCandidates.push(...orderedPorts, ...remaining);
+  }
+
   // Module chrome: top, optional stem row, east pins, pad, title, bottom.
   // Compact simple branch (BUTTON): stem●, label, title, south● — fewer blanks.
   const nEast = eastCandidates.length;
@@ -410,20 +447,28 @@ function placeBranchModule(ctx) {
   }
 
   const brTop = teeY + (pas ? 3 : 2);
-  let brX = Math.max(0, stemX - Math.floor(brW / 2));
-  // Keep clear of other branch/module boxes and their east stub labels (~12 cols).
-  for (const other of boxes) {
-    if (other.y + other.h + 2 <= brTop) continue;
-    if (other.x + other.w + 12 <= brX || other.x >= brX + brW) continue;
-    brX = other.x + other.w + 14;
+  
+  // Use layout position if provided
+  const layoutPos = hasLayout ? components[branch.name] : null;
+  let brX = layoutPos ? layoutPos.x : Math.max(0, stemX - Math.floor(brW / 2));
+  let brY = layoutPos ? layoutPos.y : brTop;
+  
+  // If no layout position, use collision avoidance
+  if (!layoutPos) {
+    // Keep clear of other branch/module boxes and their east stub labels (~12 cols).
+    for (const other of boxes) {
+      if (other.y + other.h + 2 <= brTop) continue;
+      if (other.x + other.w + 12 <= brX || other.x >= brX + brW) continue;
+      brX = other.x + other.w + 14;
+    }
+    if (stemX < brX + 1) brX = Math.max(0, stemX - 2);
+    if (stemX > brX + brW - 2) brX = Math.max(0, stemX - brW + 3);
   }
-  if (stemX < brX + 1) brX = Math.max(0, stemX - 2);
-  if (stemX > brX + brW - 2) brX = Math.max(0, stemX - brW + 3);
 
   const brBox = {
     componentId: branch.id,
     x: brX,
-    y: brTop,
+    y: brY,
     w: brW,
     h: brH,
     title,
@@ -465,14 +510,17 @@ function placeBranchModule(ctx) {
 
   // East pins start one row below stem-label row
   let ey = brBox.y + 2;
+  const branchSides = hasLayout ? (sides[branch.name] || {}) : {};
+  
   for (const ep of eastCandidates) {
     const net = getNet(netlist, ep.netId);
-    const px = brBox.x + brBox.w - 1;
+    const epSide = branchSides[ep.label || ep.id] || 'E';
+    const px = epSide === 'E' ? brBox.x + brBox.w - 1 : brBox.x;
     portGeom.push({
       portId: ep.id,
       x: px,
       y: ey,
-      side: 'E',
+      side: epSide,
       marker: '●',
     });
     if (ep.label) portLabels[ep.id] = ep.label;
@@ -483,14 +531,14 @@ function placeBranchModule(ctx) {
     // module; art02 shows 5V at each module — allow multi-owner floating stubs.
     const stubLeaf = net.floating || owners.length === 1;
     if (stubLeaf) {
-      const x2 = px + 2;
+      const x2 = epSide === 'E' ? px + 2 : px - 2;
       wires.push({
         netId: net.id,
         segments: [{ x1: px, y1: ey, x2, y2: ey }],
       });
       labels.push({
         text: net.name,
-        x: x2 + 1,
+        x: epSide === 'E' ? x2 + 1 : Math.max(0, x2 - net.name.length),
         y: ey,
         kind: "net",
       });

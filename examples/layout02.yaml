@@ -1,0 +1,55 @@
+# layout02.yaml — hand-edited placement for table02
+# Box widths: ESP32-C3=14, ADS1115=14, RELAY=12, ZMCT103C=14
+
+# Component positions (grid cells)
+components:
+  ESP32-C3: { x: 1, y: 0 }
+  ADS1115: { x: 24, y: 0 }
+  RELAY: { x: 1, y: 14 }
+  ZMCT103C: { x: 24, y: 17 }
+
+# Pin order per module (aesthetic override; electrical SoT is table order)
+pinOrder:
+  ESP32-C3: [3V3, GND, GPIO8, GPIO9, GPIO4, GPIO3]
+  ADS1115: [VDD, GND, SDA, SCL, ADDR, AIN0, AIN1, AIN2, AIN3]
+  RELAY: [IN, NO, COM, 5V, GND]
+  ZMCT103C: [OUT, 5V, GND]
+
+# Face assignment per pin (N/E/S/W)
+sides:
+  ESP32-C3:
+    GPIO8: E
+    GPIO9: E
+    GPIO4: E
+    GPIO3: E
+    3V3: E
+    GND: E
+  ADS1115:
+    SDA: W
+    SCL: W
+    ADDR: W
+    VDD: W
+    GND: W
+    AIN0: E
+    AIN1: E
+    AIN2: E
+    AIN3: E
+  RELAY:
+    IN: N
+    NO: E
+    COM: E
+    5V: E
+    GND: S
+  ZMCT103C:
+    OUT: W
+    5V: E
+    GND: S
+
+# Layout-only groups (cached interior, redrawn per instance)
+# groups:
+#   NTC_CH1:
+#     members: [TB1, TB2, NTC1, R1]
+#     external:
+#       TPO: TB1
+#       TPU: TB2
+#       AIN0: ADS1115
