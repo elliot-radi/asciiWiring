@@ -1,6 +1,7 @@
 # Project status
 
-**Snapshot date:** 2026-04  
+**Snapshot date:** 2026-07
+
 **Repo:** https://github.com/elliot-radi/asciiWiring
 
 ## One-liner
@@ -28,7 +29,8 @@ We outgrew “only a skill.” Keep the skill draft, but develop and version
 - **Roles (derived):** bus / branch / passive (feedthrough still TODO)  
 - **Pipeline idea:** parse → netlist IR → place → route → paint  
 - **Paint rules:** join tees / `┼` same-net; insulated hop `\` different nets  
-- **Passives:** multi-net body between nets, not series fake-on-stem  
+- **Passives:** multi-net body between nets, not series fake-on-stem; target
+  glyph convention is a regular box with refdes inside and specs in metadata
 - **Modules:** named pin dots on boxes (MCU, ADC, relay, …)  
 - **Fixtures:**  
   - `table01` / `art01` / `golden01` — ESP32 + OLED + button + pullup  
@@ -52,33 +54,46 @@ not guaranteed art-director output — especially off-spine stacks.
 | Item | Notes |
 |------|--------|
 | Perfect auto placement | Bridge too far for pure heuristics; see HITL.md (human-in-the-loop) |
-| Layout sidecar file | Next geometry SoT (planned) |
-| Browser floorplan | Optional editor *for that file*, not required day-one |
-| Feedthrough TBs / NTC expand | `docs/TODO.md` — table03+ language |
+| Layout sidecar file | Next geometry SoT; hand-edit trial is the immediate product test |
+| Browser floorplan | Gated editor *for that file*; no work until the sidecar trial identifies the bottleneck |
+| Passive refdes/spec metadata | Convention documented in `docs/GLYPHS.md`; parser/render support not implemented |
+| Layout-only grouping / edge alignment | Direction documented in `docs/GLYPHS.md`; not implemented |
+| Feedthrough TB semantics | `docs/TODO.md` — still needs table03+ language decisions |
+| Whole-module rotation | Explicitly unspecified pending real passive/layout use |
 | Skill install to `~/.pi` | After tool + layout loop is pleasant |
-| License text beyond TBD | Choose on GitHub publish |
 
 ## Parallel tracks (don’t confuse them)
 
 1. **Tool core** — IR freeze, glyph/route/paint, layout document, tests  
 2. **Human-in-the-loop geometry** — sidecar → diagnostics → maybe browser ([HITL.md](HITL.md))  
-3. **Language growth** — feedthrough, exterior labels ([TODO.md](TODO.md))  
-4. **Skill** — table workflow only; invoke tool  
+3. **Glyph growth** — refdes metadata, grouping, edge alignment ([GLYPHS.md](GLYPHS.md))
+4. **Language growth** — feedthrough incidence semantics ([TODO.md](TODO.md))
+5. **Skill** — table workflow only; invoke tool
 
 ## Current north star (sequence)
 
-1. Document + GitHub-ready repo (**this**)  
-2. Extract/confirm pipeline seams; **layout YAML** load/save + route-from-layout  
-3. Prove table02: hand layout → art close to `art02` without heuristic heroics  
-4. Optional: router “complaints” prompts  
-5. Optional: grid browser editing the same layout file  
-6. Skill package when invocation story is boring  
+1. Extract/confirm pipeline seams; **layout YAML** load/save + route-from-layout
+2. Trial hand-edited layouts on table02 and an NTC-style fixture
+3. Distinguish schema-editing pain from slow visual feedback before choosing UX work
+4. Add layout-only grouping / boundary alignment as fixture pressure requires
+5. Optional: router complaints or grid browser, selected from trial evidence
+6. Skill package when invocation story is boring
 
 ## Non-goals (still)
 
 - KiCad/SPICE replacement  
 - LLM freehand ASCII as primary path  
 - User-facing JSON *instead of* the Markdown table  
+
+## 23 Jul 2026 update: HITL direction decided for now — hand-editing
+`layout.yaml` (Option A) is being trialed before any browser GUI work
+(Option E) starts; see HITL.md decision log for the reasoning and the
+target architecture kept on file for later. Passive component convention
+(boxes + refdes + side table) and grouped-component handling (layout-only
+grouping, Phase 1) are specified in the new GLYPHS.md, not yet implemented.
+Component/module rotation remains explicitly unspec'd pending the passive
+convention's real-world use.
+
 
 ## Key docs map
 
@@ -88,6 +103,7 @@ not guaranteed art-director output — especially off-spine stacks.
 | [docs/SPEC.md](SPEC.md) | Table language |
 | [docs/ARCHITECTURE.md](ARCHITECTURE.md) | Pipeline seams |
 | [docs/HITL.md](HITL.md) | Human-in-the-loop (HITL): who places vs draws |
+| [docs/GLYPHS.md](GLYPHS.md) | Component drawing, grouping, and orientation conventions |
 | [docs/ROADMAP.md](ROADMAP.md) | Phased work |
 | [docs/TODO.md](TODO.md) | Deferred language/features |
 | [AGENTS.md](../AGENTS.md) | Contributor / agent norms |

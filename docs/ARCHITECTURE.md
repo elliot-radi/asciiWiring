@@ -1,8 +1,8 @@
 # Architecture
 
 **Status:** draft — guides the **tool** implementation.  
-**Companions:** [SPEC.md](SPEC.md), [HITL.md](HITL.md), [STATUS.md](STATUS.md),
-[ROADMAP.md](ROADMAP.md)
+**Companions:** [SPEC.md](SPEC.md), [HITL.md](HITL.md),
+[GLYPHS.md](GLYPHS.md), [STATUS.md](STATUS.md), [ROADMAP.md](ROADMAP.md)
 
 Product: Node library + CLI. Optional pi skill only drafts tables and invokes
 the tool (`skill/SKILL.md`) — it is not the placer.
@@ -160,7 +160,8 @@ Layout reads roles; paint does not need them.
 ```
 LayoutOptions {
   policy: "spine-v1" | "from-document"  // bootstrap vs HITL sidecar
-  layoutDocument?: object               // future: positions, pinOrder, sides
+  layoutDocument?: object               // future: positions, pinOrder, sides,
+                                        // passive orientation, groups, edges
   // channel spacing, page width, fold buses, …
 }
 
@@ -185,7 +186,25 @@ LabelGeom { text, x, y, kind: "net" | "note" | "title" }
 Segment  { x1,y1,x2,y2 }    // axis-aligned
 ```
 
-Coordinates are **integer character cells**.
+Coordinates are **integer character cells**. The sidecar's top-level component
+collections should be maps keyed by stable component identity rather than
+arrays, keeping one-component edits local and avoiding reorder-only diffs.
+Exact schema, validation, and identity rules land with Phase 3.
+
+### 3.4.1 Glyph build (target seam)
+
+Before placement, a glyph builder should derive module, passive, or composite
+geometry and external ports from the netlist plus non-electrical metadata.
+Drawing conventions live in [GLYPHS.md](GLYPHS.md).
+
+- Modules expose N ports with layout-controlled face/order preferences.
+- Two-terminal passives use regular boxes and a horizontal/vertical axis.
+- Layout-only groups retain their flat electrical components but expose a rigid
+  cached interior and module-like external boundary to placement.
+- `edge` is a boundary placement/alignment preference, never connectivity.
+
+The current `spine-v1` implementation does not yet have this independent seam.
+It builds boxes while placing and assigns faces internally.
 
 #### Policy `spine-v1` (bootstrap placer — implemented)
 
@@ -240,7 +259,7 @@ port-kind styling), not a different table language.
 
 ## 4. Module layout (code)
 
-Current / target shape (names indicative; split place vs route next):
+Current / target shape (names indicative; split glyph/place/route next):
 
 ```
 src/
@@ -283,7 +302,10 @@ Features you called out map onto **single seams**:
 | Alternate connectors (`○`, crowfoot, stubs) | `GlyphProfile` / port style | Netlist, table language |
 | Folded net buses (draw 8 wires as a thick bundle) | Layout policy + paint | Incidence IR still has distinct nets |
 | Multiple pages / sheets | `LayoutPlan.pages[]` + page break hints in frontmatter | Single-page still a plan with one page |
-| Pin side constraints | Optional port hints → layout | Default auto side assignment remains |
+| Pin side constraints | Layout sidecar → glyph/place/route | Default auto side assignment remains |
+| Passive orientation | Layout sidecar (`h`/`v`) → glyph/place | Still two ports on distinct nets |
+| Layout-only groups | Glyph composition + layout sidecar | Flat netlist remains electrical SoT |
+| Boundary alignment | Layout placement preference (`edge`) | No electrical semantics |
 | Richer passives (series R between two connectors) | Passive/route generalization | Still ports on nets |
 | SVG/HTML backend | New paint target from `LayoutPlan` | Same layout plan |
 | Multi-board / harness | Multiple netlists + composition policy | Table per board remains simple |
@@ -387,7 +409,9 @@ Growth path without poisoning the table:
 |-------|-----------|----------|
 | Content | Markdown table | nets, pins, `x`, `°` |
 | Content footnotes | Abbreviations | long BOM names |
+| Geometry | Sibling layout YAML | positions, pin order/faces, passive axis, groups, edge alignment |
 | Presentation | YAML frontmatter (later) | policy, profile, fold, page size |
+| Component metadata | Specified side table/sibling (later) | refdes type/value/spec; no net meaning |
 | CLI flags | override frontmatter | `--profile ascii7` |
 
 v1 may ignore frontmatter entirely. Parsing should not crash on unknown keys

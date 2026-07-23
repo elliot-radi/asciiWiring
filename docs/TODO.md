@@ -5,7 +5,39 @@ Living list of deferred work. Near-term product roadmap stays in
 real hardware (boiler-room pump controller) that must not be forgotten when
 slicing fixtures.
 
-Last updated with the pump-controller braindump → `table02` module slice.
+---
+## Graduated from "deferred" (was: "NTC expand") (23 Jul 2026)
+
+The vague "NTC expand" bullet is now a real design, see
+[GLYPHS.md](./GLYPHS.md):
+- [ ] Implement `group:` tag recognition in the layout stage (Phase 1:
+      layout-only grouping — cache internal geometry, redraw as one rigid
+      glyph per instance).
+- [ ] Implement `edge: S` (boundary/rail) tag: default dominant face +
+      baseline-alignment pass, reusing the existing spine channel-alignment
+      logic.
+- [ ] Verify whether `spine-v1.js` currently honors arbitrary `sides:` face
+      assignment (e.g. left/right-only placement) or assumes top/bottom —
+      needed before any rotation UI gets spec'd.
+- [ ] Passive refdes rendering + side-table parsing (see GLYPHS.md for
+      prefix conventions and table format).
+
+## Newly deferred (23 Jul 2026)
+
+- Whole-component rotation UI (rotate-90 + per-pin face drag) — waiting on the passive convention settling in practice first.
+- Group-template / instance authoring (Phase 2 in GLYPHS.md) — only pursue
+  if Phase 1 layout-only grouping proves insufficient (i.e. table
+  repetition across many group instances becomes genuinely painful).
+- GUI tech stack (canvas rendering approach, framework, local vs. static
+  app) — premature until the layout.yaml hand-edit trial (Option A) is
+  actually done; see HITL.md decision log.
+- `skill/SKILL.md` update to draft tables including passive refdes/side-
+  table convention — blocked on GLYPHS.md existing as something to draft
+  against; not urgent.
+
+---
+Previous update 2026-07 with the sidecar/glyph direction and the planned
+NTC grouping fixture.
 
 ---
 
@@ -19,7 +51,6 @@ Last updated with the pump-controller braindump → `table02` module slice.
 | `table04` | Three NTC channels + CT + relay + mains TBs | not started |
 | `artNN` / `goldenNN` | Hand target + generator snapshot per table | as each lands |
 
----
 
 ## Language / SPEC (before expanded channels)
 
@@ -36,19 +67,36 @@ Last updated with the pump-controller braindump → `table02` module slice.
   - other SPEC’d form — **no silent hacks**
 - [ ] No pin dots required; minimal 4×3-ish box optional for identity.
 
-### Refdes + exterior labels
+### Refdes + specification metadata
 
-- [ ] Component header = short refdes (`R1`, `NTC1`, `TB01`) allowed and preferred for passives.
-- [ ] Exterior labels (value `100k`, name `TPO`, net hints) as **presentation**, not incidence cells:
-  - footnotes / side table / frontmatter `labels: { R1: "100k" }`
-  - paint places text N/S/E/W of mini-box without bloating the box
-- [ ] Mini-box sizing heuristic: TYPE 1–3 letters + NUM 1–99 → ~4×3 default for passives/feedthroughs.
+The visual convention has moved from vague deferral to a design direction in
+[GLYPHS.md](GLYPHS.md): regular boxes, refdes in the glyph, and type/value/spec
+in a side table. Existing value-named v1 components remain legal.
 
-### NTC / sensor semi-passives
+- [ ] Specify the metadata table (selection/heading, same-document vs sibling,
+      duplicate/missing refs, relationship to abbreviations) before parsing it.
+- [ ] Parse metadata without changing incidence/net semantics.
+- [ ] Render passive refdes boxes and expose spec metadata to future backends.
+- [ ] Mini-box sizing heuristic: common refdes of roughly 1–4 characters gets
+      a compact box; longer valid refs still auto-size rather than truncate.
+- [ ] Exterior net/note labels remain **presentation**, not incidence cells.
 
-- [ ] Model NTC as two-terminal component (often with feedthrough TBs on each leg).
-- [ ] Channel template / motif (optional later): NTC + TB_sig + TB_gnd + divider R → sense net.
-- [ ] Do not collapse nets just to get thinner art; fold is layout/paint only if used.
+### NTC / sensor composites
+
+- [ ] Model each NTC as an explicit two-terminal component (often with
+      feedthrough TBs on its legs).
+- [ ] Add a `table03`-class fixture for one complete NTC divider channel and a
+      layout sidecar that exercises the refdes convention.
+- [ ] Implement layout-only `group` metadata: retain explicit flat components
+      and nets, but place an NTC channel as one rigid composite glyph.
+- [ ] Define group external ports and equivalence/cache identity from fixtures;
+      never infer or collapse connectivity.
+- [ ] Implement geometry-only `edge: S` (and N/E/W) preference: dominant-face
+      default plus perimeter baseline alignment, reusing extracted alignment
+      machinery where practical.
+- [ ] Do not collapse nets merely to make thinner art; folding is layout/paint.
+- [ ] **Deferred:** authoring-time channel templates/instances. Revisit only if
+      flat-table repetition remains painful after layout-only grouping.
 
 ### Rails & power
 
@@ -75,15 +123,35 @@ Last updated with the pump-controller braindump → `table02` module slice.
 - [ ] Feedthrough in-line on a routed net (TB on way from connector to ADC)
 - [ ] Hop-heavy stems still rare but tested when pin order forces it
 - [ ] Abbreviations applied to art titles when desired (`ADS1115` → short vs long)
-- [ ] Vertical vs horizontal auto-orientation for feedthroughs / mini-passives
+- [ ] Passive `orientation: h | v` in the layout document
+- [ ] Arbitrary module/group pin-face assignment in route-from-layout
+      (`spine-v1` currently assigns faces internally; it does not honor sidecar
+      `sides` overrides)
+- [ ] Boundary baseline alignment for `edge: N/E/S/W` peers
 
 ---
 
 ## Process
 
-- [ ] `table02` → human-OK art → `art02.md` + `golden02.md` + selftest case
-- [ ] After `table03` language decisions: update SPEC §6–§8 and ARCHITECTURE roles
-- [ ] Keep HARDWARE.md-style prose under tables for collapsed chemistry
+- [x] `table02` → hand target + generator snapshot + selftest case
+- [ ] Trial hand-edited layout YAML on `table02` and the new NTC fixture;
+      record schema-ergonomics and feedback-loop problems separately.
+- [ ] Verify route-from-layout face assignment before designing any rotation UI.
+- [ ] After `table03` language decisions: update SPEC §6–§8 and ARCHITECTURE roles.
+- [ ] Keep HARDWARE.md-style prose under tables for collapsed chemistry.
+
+## Deferred interaction / product choices (2026-07)
+
+- Whole-component rotation UI (rotate 90° and per-pin face dragging): wait for
+  passive orientation and real sidecar usage to settle.
+- Group-template/instance authoring: only if layout-only grouping leaves proven
+  authoring pain.
+- Browser technology (canvas/DOM/framework/local vs static): wait until the
+  layout-sidecar trial shows whether a GUI is warranted.
+- Route-on-drop versus live reroute during drag: decide with a GUI prototype,
+  not in the file schema.
+- Skill guidance for refdes/spec tables: update after the metadata format is
+  specified and implemented, not merely from the drawing convention.
 
 ---
 

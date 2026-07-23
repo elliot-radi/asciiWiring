@@ -18,6 +18,7 @@ Do **not** freehand multi-box ASCII in the LLM. Do **not** treat perfect auto-la
 |-----|------|
 | `docs/STATUS.md` | Orientation / what’s solid |
 | `docs/HITL.md` | Who places vs who draws |
+| `docs/GLYPHS.md` | How components/groups are drawn |
 | `docs/SPEC.md` | Table language (normative) |
 | `docs/ARCHITECTURE.md` | Pipeline seams |
 | `docs/ROADMAP.md` / `docs/TODO.md` | Phases vs deferred |
@@ -73,8 +74,9 @@ Today place+route are still fused in `layout/spine-v1.js` bootstrap. Target spli
 
 1. Layout **sidecar** + route/paint from netlist+layout (prove on table02 ≈ art02).  
 2. Keep spine bootstrap for simple cases.  
-3. Language growth (TBs, NTC expand) only per `docs/TODO.md`.  
-4. Skill packaging last.
+3. Glyph growth (refdes, layout-only NTC groups) per `docs/GLYPHS.md` / `docs/TODO.md`.
+4. Language growth (especially feedthrough TB incidence) only per `docs/TODO.md`.
+5. Skill packaging last.
 
 ## Tone
 

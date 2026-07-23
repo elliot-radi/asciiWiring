@@ -1,7 +1,7 @@
 # Roadmap
 
 **Status:** living plan. Near-term items are commitments for making the
-skill real; later items are **scoped so we don’t paint ourselves into a
+tool loop real; later items are **scoped so we don’t paint ourselves into a
 corner**, not promises.
 
 ---
@@ -14,8 +14,9 @@ corner**, not promises.
 > Ship boring correctness on fixtures before cleverness (folded buses,
 > multi-page, fancy connectors, full GUI).
 
-Extensibility lands as **seams** in [ARCHITECTURE.md](ARCHITECTURE.md) and
-human-in-the-loop workload split in [HITL.md](HITL.md).
+Extensibility lands as **seams** in [ARCHITECTURE.md](ARCHITECTURE.md), the
+human-in-the-loop workload split in [HITL.md](HITL.md), and component drawing
+conventions in [GLYPHS.md](GLYPHS.md).
 
 ---
 
@@ -71,7 +72,7 @@ auto reverse-engineering of pin sides from silkscreen, perf optimisation.
 - [x] License MIT + `package.json`
 - [x] STATUS / human-in-the-loop docs; skill framed as thin client
 - [ ] Cleaner CLI errors
-- [ ] Push GitHub remote / fix `package.json` repository URL
+- [x] Configure GitHub remote and `package.json` repository URL
 
 Deferred board detail: [TODO.md](TODO.md) (`table03+`).
 
@@ -79,23 +80,45 @@ Deferred board detail: [TODO.md](TODO.md) (`table03+`).
 
 ## Phase 3 — Layout sidecar (next product bar)
 
-See [HITL.md](HITL.md) (human-in-the-loop). Goal: table + **layout YAML** → route/paint → art
-close to `art02` without heroic auto-place.
+See [HITL.md](HITL.md) (human-in-the-loop). Goal: table + **layout YAML** →
+route/paint → art close to `art02` without heroic auto-place. Try this text
+workflow properly before committing to GUI work.
 
-- [ ] Define layout document schema (positions, optional pinOrder/sides)
-- [ ] `glyph` build independent of global place
-- [ ] `route` + `paint` from netlist + layout
+- [ ] Define layout document schema (positions, optional `pinOrder`/`sides`;
+      top-level maps keyed by stable component identity)
+- [ ] Build glyphs independently of global placement
+- [ ] Route + paint from netlist + layout
 - [ ] CLI: `--layout examples/layout02.yaml`
-- [ ] Freeze `layout02` for golden path; keep spine bootstrap as default
+- [ ] Freeze `layout02` for the golden path; keep spine bootstrap as default
+- [ ] Add one expanded NTC-style fixture/layout to exercise repeated small
+      components and boundary placement
+- [ ] Record whether trial friction is **schema ergonomics** or
+      **edit/render feedback latency**
 - [ ] Optional: router collision “complaints” for minimal human answers
 
-**Exit:** hand-authored layout for table02 regenerates acceptable art stably.
+**Exit:** hand-authored layouts for table02 and the NTC trial regenerate
+acceptable art stably, and the next UX investment is supported by evidence.
+
+### Near-term glyph work
+
+These tasks may land during/after the sidecar seams; their design home is
+[GLYPHS.md](GLYPHS.md).
+
+- [ ] Passive refdes-in-box rendering plus specified side-table metadata
+- [ ] Layout-only grouping (`group`) with reusable/cached interiors
+- [ ] Boundary preference/alignment (`edge`) for off-board component groups
+- [ ] Passive horizontal/vertical orientation in the layout document
+
+Authoring-time group templates are deliberately absent: they are triggered
+only if flat-table repetition remains painful after layout-only grouping.
 
 ---
 
 ## Phase 4 — Optional UI + skill install
 
-- [ ] Grid browser editor for the **same** layout file (not a parallel format)
+- [ ] **Gated:** build the three-pane grid browser editor only if the Phase 3
+      trial identifies hand-editing/feedback as the bottleneck; use the **same**
+      layout file, not a parallel format (target architecture in HITL)
 - [ ] Package pi skill that only: drafts tables, runs CLI, opens layout loop
 - [ ] Real HARDWARE.md adoption; more fixtures as needed
 
@@ -174,8 +197,7 @@ We are **not** trying to become:
 - A replacement for Mermaid flowcharts/sequence diagrams
 - An LLM prompt that freehands boxes “more carefully”
 
-If a request needs PCB copper, use EDA. If it needs flowchart control flow,
-use Mermaid. If it needs module wiring in a firmware README, use this.
+If a request needs PCB copper, use EDA. If it needs flowchart control flow, use Mermaid. If it needs module wiring in a firmware README, use this.
 
 ---
 
@@ -194,5 +216,25 @@ use Mermaid. If it needs module wiring in a firmware README, use this.
 | 2026-04 | Skill install deferred until table01 acceptance |
 | 2026-04 | table02 = real pump controller at **module** detail; NTC/TB/mains expanded later |
 | 2026-04 | Feedthrough TB + exterior labels parked in docs/TODO.md (not sneaked into v1 table) |
+| 2026-07 | Trial hand-edited layout sidecars before starting a browser editor |
+| 2026-07 | Two-terminal glyphs use boxes; refdes in glyph and specs in metadata table |
+| 2026-07 | Repeated sub-circuits start as layout-only groups; authoring templates deferred |
+| 2026-07 | Generic module rotation remains unspecified pending fixture experience |
 
 Add rows when something normative changes; update SPEC/ARCHITECTURE to match.
+## Near-term (23 Jul 2026 direction)
+
+1. **Hand-edit `layout.yaml` trial (Option A).** Exercise it against
+   `table02` and a new NTC-style fixture. Goal: determine whether the pain
+   is schema ergonomics or feedback-loop latency — see HITL.md decision
+   log for why that distinction matters before deciding what to build next.
+2. **Passive convention.** Refdes labeling in-glyph, side table for specs,
+   standard prefix set. See GLYPHS.md.
+3. **Layout-only grouping (Phase 1).** `group:` tag + cached-interior
+   rendering; `edge:` tag + boundary-alignment pass. See GLYPHS.md.
+4. **Gated: browser GUI (Option E).** Only after (1) concludes hand-edited
+   YAML is the actual bottleneck. Target architecture already sketched in
+   HITL.md's decision log so it doesn't need re-deriving when this comes up.
+
+Group-template authoring (GLYPHS.md Phase 2) is intentionally not on this
+list — it's a trigger-conditioned future item, not a scheduled one.

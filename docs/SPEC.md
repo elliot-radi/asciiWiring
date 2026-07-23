@@ -2,7 +2,7 @@
 
 **Status:** draft, normative for **electrical** table language.  
 **Companions:** [ARCHITECTURE.md](ARCHITECTURE.md), [HITL.md](HITL.md),
-[STATUS.md](STATUS.md), [ROADMAP.md](ROADMAP.md)
+[GLYPHS.md](GLYPHS.md), [STATUS.md](STATUS.md), [ROADMAP.md](ROADMAP.md)
 
 This document defines the **author-facing electrical language** (the Markdown
 connectivity table) and the **meaning** a correct tool must preserve when
@@ -40,9 +40,11 @@ A wiring document is Markdown. The renderer looks for:
 2. Optional **abbreviation footnotes** after the table.
 3. Optional prose before/after (ignored by the renderer except footnotes).
 
-Future: optional YAML frontmatter and/or a **sibling layout file** for
-placement and presentation (glyph set, page breaks, pin sides). Those must
-not change electrical meaning of the table. See ARCHITECTURE and HITL.md.
+Future: optional YAML frontmatter, component-spec metadata, and/or a **sibling
+layout file** for placement and presentation (glyph set, page breaks, pin
+sides/order, passive axis, layout-only groups, boundary alignment). Those must
+not change electrical meaning of the table. See ARCHITECTURE, HITL, and
+GLYPHS.
 
 ### 3.1 Table geometry
 
@@ -108,6 +110,10 @@ Do not merge rows implicitly.
 
 - One column = one component instance.
 - Header text = default box label (after abbreviation expansion for display if desired).
+- A short refdes header such as `R1`, `NTC1`, or `TB1` is legal; it is still
+  just the component instance identity in v1. The target refdes/spec metadata
+  convention is documented in GLYPHS, but its side-table grammar is not yet
+  normative or parsed.
 - Column order is an **authoring** order; layout may reorder within policy limits (v1: try to respect bus column order left-to-right).
 
 ### 5.1 Abbreviations
@@ -328,9 +334,11 @@ tees off beside it toward 3.3V:
       (button)
 ```
 
-**Passive body rule:** a two-net passive is drawn as a **box (or symbol)
-with two leads**, one into each net. It is incorrect to draw the primary net
-as a single vertical that enters the top of the passive and exits the bottom
+**Passive body rule:** a two-net passive is drawn as a **regular box with two
+leads**, one into each net. Alternate glyph profiles may later use a symbol,
+but the current component convention is box-first (GLYPHS). It is incorrect
+to draw the primary net as a single vertical that enters the top of the
+passive and exits the bottom
 with only a side stub for the other rail — that reads as “series insert on
 the stem,” which is the old `art01` mistake.
 

@@ -4,7 +4,8 @@
 parts they’re better at (here: spatial placement / “does this read?”),
 while the computer does mechanical draw/route/regen.
 
-**Status:** design discussion (2026-04). Not a commitment to a browser UI.
+**Status:** design direction (updated 2026-07). The sidecar trial is the
+current commitment; a browser UI remains gated on what that trial teaches.
 
 When auto placement stops being “good enough,” the instinct is graph-paper
 cutouts in a browser. That may be right — but **only after** we list what
@@ -69,7 +70,7 @@ Machine produces an initial place (today’s spine or simpler).
 Human (or LLM under human review) edits a **layout sidecar**:
 
 ```yaml
-# layout02.yaml — geometry only; nets still from table
+# layout02.yaml — illustrative draft; exact Phase 3 schema is still to land
 components:
   RELAY:    { x: 12, y: 14 }
   ZMCT103C: { x: 40, y: 14 }
@@ -174,4 +175,58 @@ The **human** owns spatial taste (and electrical sign-off on the table).
   `layout` document load/save.  
 - Demote: “spine-v1 alone must match art02.” Bootstrap only.
 
-See [STATUS.md](STATUS.md), [ARCHITECTURE.md](ARCHITECTURE.md), [ROADMAP.md](ROADMAP.md).
+See [STATUS.md](STATUS.md), [ARCHITECTURE.md](ARCHITECTURE.md),
+[GLYPHS.md](GLYPHS.md), and [ROADMAP.md](ROADMAP.md).
+
+## Decision log (2026-07)
+
+Following the strengths/options analysis above, current direction:
+
+1. **Try Option A properly before building anything else.** Hand-editing
+   `layout.yaml` gets a real trial run (starting with `table02` plus a new
+   NTC-style fixture) before any GUI work starts. The point is to learn
+   whether the pain is in *schema ergonomics* (YAML is verbose/hard to
+   write) or in the *feedback loop* (can't tell if a value is right without
+   re-rendering) — these argue for different fixes, and conflating them
+   would muddy what this test is supposed to teach us.
+2. **Passives get boxes, not brackets.** See [GLYPHS.md](./GLYPHS.md) for
+   the full convention (refdes labeling + side table).
+3. **Component/module rotation is deliberately unspec'd for now** — wait to
+   see how the passive convention holds up in practice before generalizing
+   a rotate/flip interaction.
+4. **Grouped components ship as layout-only grouping (Phase 1)**, not
+   authoring-time templates. The wiring table remains the singular source
+   of truth; only the layout stage treats a tagged cluster as one rigid
+   glyph. Template/instance authoring (Phase 2) is explicitly deferred
+   until Phase 1's table repetition proves painful. Full detail in
+   GLYPHS.md.
+5. **Schema note for `layout.yaml`:** keep top-level structures as maps
+   keyed by component name (`components: { RELAY: {...}, ... }`), not
+   arrays. A map means a single-component edit is a single-line diff,
+   whoever makes it — arrays invite reordering noise that fights this
+   doc's own "layout file = reviewable, committable SoT" goal.
+
+### Target architecture for Option E (when we get there)
+
+Not being built now, but worth keeping so it isn't rediscovered from
+scratch later. Three-pane browser editor:
+
+- **Left:** glyph palette, generated straight from the parsed table (and,
+  once Phase 1 grouping exists, group templates appear as single draggable
+  items rather than their sub-components).
+- **Center:** a literal character-grid canvas (not continuous x/y) — every
+  glyph snaps to integer cell coordinates from the first frame, arrow-key
+  nudge = 1 cell, so what's seen while dragging is what exports.
+- **Right:** router complaints list (`label-collision`, `stub-crosses-box`,
+  `long-stem`, from Option B) paired with a live ASCII preview pane that
+  renders the actual paint-stage output, not an approximation.
+- **Persistence:** the GUI reads/writes the same `layout.yaml` Option A
+  produces — no proprietary format, so hand-editing and the GUI stay
+  interchangeable, and headless/CI workflows keep working.
+- **Routing stays automatic.** The human moves boxes and reassigns
+  pin faces/order; the router re-runs after every move. Manual wire-drawing
+  is explicitly out of scope — an ugly route is a placement signal, not
+  something to hand-fix with wire tools.
+- **Open question, not yet resolved:** route-on-drop (stable, updates on
+  release) vs. live re-route during drag (more "magical" but risks jitter
+  on strained boards like `table02`). Revisit once there's an actual GUI to test it in.
