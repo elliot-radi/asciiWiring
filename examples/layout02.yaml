@@ -1,0 +1,66 @@
+# layout02.yaml — DRAFT schema sketch for table02 (nested / face-banked)
+#
+# STATUS: not loaded by the CLI or library. Bootstrap spine-v1 ignores this
+# file. Authoring shape only — see docs/HITL.md; future docs/LAYOUT.md.
+#
+# Tentative contract (not implemented):
+#
+#   components.<Name> — glyph dossier (key = table column name)
+#     x, y   — top-left grid cell of the module box border (integers)
+#     sides  — pin banks by face; NO separate pinOrder
+#       keys:   always N, E, S, W (include empty faces so HITL can drop pins in)
+#       values: ordered lists of named pins ( [] if none on that face yet )
+#       order:  N, S → left → right
+#               E, W → top  → bottom
+#
+#   Pin census (hard):
+#     - Bootstrap / pre-edit emit lists every named pin from the table (SoT)
+#       exactly once across the four faces (tool chooses initial banking).
+#     - Hand-edit may move pins between faces and reorder within a face.
+#     - Dropping, renaming, or duplicating a pin vs the table → error.
+#     - Extra pin names not on the component → error.
+#
+#   Table remains electrical SoT. No wires or authored w/h here.
+#   x/y and banks below are art02-ish illustration, not golden metrics.
+
+components:
+  ESP32-C3:
+    x: 1
+    y: 0
+    sides:
+      N: []
+      E: [3V3, GND, GPIO8, GPIO9, GPIO4, GPIO3]
+      S: []
+      W: []
+
+  ADS1115:
+    x: 24
+    y: 0
+    sides:
+      N: []
+      E: [AIN0, AIN1, AIN2, AIN3]
+      S: []
+      W: [VDD, GND, SDA, SCL, ADDR]
+
+  RELAY:
+    x: 1
+    y: 14
+    sides:
+      N: [IN]
+      E: [NO, COM, 5V]
+      S: [GND]
+      W: []
+
+  ZMCT103C:
+    x: 24
+    y: 17
+    sides:
+      N: [OUT]
+      E: [5V]
+      S: [GND]
+      W: []
+
+# Deferred on the same dossier (do not invent meaning yet):
+#   orientation: h | v     # passives
+#   edge: N | E | S | W    # boundary preference (GLYPHS)
+#   group: <id>            # layout-only rigid group
