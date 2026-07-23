@@ -283,10 +283,6 @@ function layoutBranchesAndPassives(ctx) {
       labels,
       portLabels,
       hostBottom,
-      hasLayout,
-      components,
-      pinOrders,
-      sides,
     });
   }
 }
