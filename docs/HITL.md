@@ -64,24 +64,49 @@ HITL feature to build — but a strong target architecture.
 
 Ranked roughly by implementation cost × leverage. Mix-and-match.
 
-### A. Bootstrap + surgical override file (recommended near-term core)
+### A. Bootstrap emit + hand-edited layout document (recommended near-term core)
 
-Machine produces an initial place (today’s spine or simpler).
-Human (or LLM under human review) edits a **layout sidecar**:
+Machine **emits** an initial layout dossier (today’s spine can seed this later, or
+a dumb default bank). Human edits a **nested layout sidecar** — one block per
+glyph, not cross-cutting attribute sections.
+
+Checked-in sketch: [`examples/layout02.yaml`](../examples/layout02.yaml)
+(unwired; CLI ignores it until Phase 3 from-document lands).
 
 ```yaml
-# layout02.yaml — illustrative draft; exact Phase 3 schema is still to land
+# layout02.yaml — face-banked glyph dossiers (draft)
 components:
-  RELAY:    { x: 12, y: 14 }
-  ZMCT103C: { x: 40, y: 14 }
-pinOrder:
-  ADS1115: [VDD, GND, SDA, SCL, ADDR, AIN0, AIN1, AIN2, AIN3]
-sides:
-  RELAY: { IN: N, NO: E, COM: E, "5V": E, GND: S }
+  RELAY:
+    x: 1
+    y: 14
+    sides:
+      N: [IN]           # N/S lists: left → right
+      E: [NO, COM, 5V]  # E/W lists: top → bottom
+      S: [GND]
+      W: []             # keep empty faces so HITL can drop pins in
+  ZMCT103C:
+    x: 24
+    y: 17
+    sides:
+      N: [OUT]
+      E: [5V]
+      S: [GND]
+      W: []
 ```
 
-**Human does:** positions / pin banks / faces.  
-**Computer does:** glyph metric, route, paint, hop/join.
+**Human does:** box origin (`x`,`y`); move/reorder pins on faces.  
+**Computer does:** glyph metric, route from port sites, paint, hop/join.
+
+**Pin census:** every named pin from the table appears exactly once across the
+four faces. Bootstrap emit is complete; hand-edit is rearrange only. Drop /
+rename / duplicate / invent pins → **error**.
+
+**No separate `pinOrder`:** face list order *is* edge order.
+
+**Not the path:** threading optional overrides into `spine-v1` while it still
+owns net-row spines and host depth (hybrid overlay — tried, fragile, reverted).
+Layout mode should be **from-document** place+route, with spine only as
+bootstrap / default CLI.
 
 This is graph paper **with a text editor** first — Phase A before any browser.
 
@@ -97,8 +122,8 @@ Human answers with minimal commands:
 
 ```text
 move RELAY 3 right
-flip ADS1115 AIN* to E
-pinOrder RELAY NO,COM,5V
+bank ADS1115 AIN* to E
+reorder RELAY E: NO,COM,5V
 ```
 
 **Human does:** few high-value decisions.  
@@ -182,29 +207,30 @@ See [STATUS.md](STATUS.md), [ARCHITECTURE.md](ARCHITECTURE.md),
 
 Following the strengths/options analysis above, current direction:
 
-1. **Try Option A properly before building anything else.** Hand-editing
-   `layout.yaml` gets a real trial run (starting with `table02` plus a new
-   NTC-style fixture) before any GUI work starts. The point is to learn
-   whether the pain is in *schema ergonomics* (YAML is verbose/hard to
-   write) or in the *feedback loop* (can't tell if a value is right without
-   re-rendering) — these argue for different fixes, and conflating them
-   would muddy what this test is supposed to teach us.
+1. **Try Option A properly before building anything else** — but as
+   **from-document**, not spine overlay. Schema sketch lives in
+   `examples/layout02.yaml`. Early hybrid (`--layout` hooks inside
+   `spine-v1`) was instructional and **reverted**. Next: freeze contract
+   (this file + future LAYOUT.md), then implement in slices with IR acceptance
+   tests. Schema ergonomics vs feedback latency still matter once obedience
+   works; don’t confound them with half-honored YAML.
 2. **Passives get boxes, not brackets.** See [GLYPHS.md](./GLYPHS.md) for
    the full convention (refdes labeling + side table).
 3. **Component/module rotation is deliberately unspec'd for now** — wait to
    see how the passive convention holds up in practice before generalizing
-   a rotate/flip interaction.
+   a rotate/flip interaction. Module pin banking is already `sides` face lists.
 4. **Grouped components ship as layout-only grouping (Phase 1)**, not
    authoring-time templates. The wiring table remains the singular source
    of truth; only the layout stage treats a tagged cluster as one rigid
    glyph. Template/instance authoring (Phase 2) is explicitly deferred
    until Phase 1's table repetition proves painful. Full detail in
    GLYPHS.md.
-5. **Schema note for `layout.yaml`:** keep top-level structures as maps
-   keyed by component name (`components: { RELAY: {...}, ... }`), not
-   arrays. A map means a single-component edit is a single-line diff,
-   whoever makes it — arrays invite reordering noise that fights this
-   doc's own "layout file = reviewable, committable SoT" goal.
+5. **Schema shape for `layout.yaml` (draft):** `components` is a **map**
+   keyed by table column name (not an array). Each value is a **nested glyph
+   dossier**: `x`, `y`, and `sides: { N, E, S, W }` → ordered pin lists (always
+   all four faces; empties are `[]`). No top-level `pinOrder` / pin→face maps.
+   Nested beats three cross-cutting sections for hand-edit and future GUI
+   inspectors. Maps still give identity-stable diffs vs component arrays.
 
 ### Target architecture for Option E (when we get there)
 

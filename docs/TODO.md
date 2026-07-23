@@ -16,11 +16,19 @@ The vague "NTC expand" bullet is now a real design, see
 - [ ] Implement `edge: S` (boundary/rail) tag: default dominant face +
       baseline-alignment pass, reusing the existing spine channel-alignment
       logic.
-- [ ] Verify whether `spine-v1.js` currently honors arbitrary `sides:` face
-      assignment (e.g. left/right-only placement) or assumes top/bottom —
-      needed before any rotation UI gets spec'd.
+- [x] ~~Verify whether `spine-v1` honors layout `sides`~~ — it does **not**;
+      spine assigns faces internally. Layout face banks belong to
+      **from-document** only ([HITL.md](HITL.md), `examples/layout02.yaml`).
 - [ ] Passive refdes rendering + side-table parsing (see GLYPHS.md for
       prefix conventions and table format).
+
+## Layout document (schema + path) — product bar
+
+- [x] Nested face-banked schema sketch committed (`examples/layout02.yaml`)
+- [ ] Normative short write-up (`docs/LAYOUT.md` or HITL freeze)
+- [ ] Loader + pin-census validation vs netlist
+- [ ] Glyph/port sites from document; route without spine overlay
+- [ ] CLI `--layout` → `policy: from-document` only
 
 ## Newly deferred (23 Jul 2026)
 
@@ -124,9 +132,8 @@ in a side table. Existing value-named v1 components remain legal.
 - [ ] Hop-heavy stems still rare but tested when pin order forces it
 - [ ] Abbreviations applied to art titles when desired (`ADS1115` → short vs long)
 - [ ] Passive `orientation: h | v` in the layout document
-- [ ] Arbitrary module/group pin-face assignment in route-from-layout
-      (`spine-v1` currently assigns faces internally; it does not honor sidecar
-      `sides` overrides)
+- [ ] Arbitrary module/group pin-face banking in **from-document** route
+      (face list order N/S L→R, E/W T→B; spine never reads the sidecar)
 - [ ] Boundary baseline alignment for `edge: N/E/S/W` peers
 
 ---
@@ -134,9 +141,9 @@ in a side table. Existing value-named v1 components remain legal.
 ## Process
 
 - [x] `table02` → hand target + generator snapshot + selftest case
-- [ ] Trial hand-edited layout YAML on `table02` and the new NTC fixture;
-      record schema-ergonomics and feedback-loop problems separately.
-- [ ] Verify route-from-layout face assignment before designing any rotation UI.
+- [x] Layout schema sketch (nested dossiers / four face lists) + hybrid path reverted
+- [ ] Implement from-document path; then trial hand-edited YAML on `table02`
+      and NTC fixture; record schema vs feedback pain only once obedience works
 - [ ] After `table03` language decisions: update SPEC §6–§8 and ARCHITECTURE roles.
 - [ ] Keep HARDWARE.md-style prose under tables for collapsed chemistry.
 

@@ -54,7 +54,7 @@ not guaranteed art-director output — especially off-spine stacks.
 | Item | Notes |
 |------|--------|
 | Perfect auto placement | Bridge too far for pure heuristics; see HITL.md (human-in-the-loop) |
-| Layout sidecar file | Next geometry SoT; hand-edit trial is the immediate product test |
+| Layout sidecar file | Schema sketch `examples/layout02.yaml` (nested face banks); **unwired** — no CLI load; from-document path not built; hybrid overlay tried/reverted |
 | Browser floorplan | Gated editor *for that file*; no work until the sidecar trial identifies the bottleneck |
 | Passive refdes/spec metadata | Convention documented in `docs/GLYPHS.md`; parser/render support not implemented |
 | Layout-only grouping / edge alignment | Direction documented in `docs/GLYPHS.md`; not implemented |
@@ -72,8 +72,8 @@ not guaranteed art-director output — especially off-spine stacks.
 
 ## Current north star (sequence)
 
-1. Extract/confirm pipeline seams; **layout YAML** load/save + route-from-layout
-2. Trial hand-edited layouts on table02 and an NTC-style fixture
+1. Freeze layout contract (HITL + `layout02` sketch); implement **from-document** in slices (validate → glyphs/ports → route/paint) with IR tests
+2. Hand-edit trial on table02 (+ NTC fixture) **after** YAML obedience works
 3. Distinguish schema-editing pain from slow visual feedback before choosing UX work
 4. Add layout-only grouping / boundary alignment as fixture pressure requires
 5. Optional: router complaints or grid browser, selected from trial evidence
@@ -85,14 +85,15 @@ not guaranteed art-director output — especially off-spine stacks.
 - LLM freehand ASCII as primary path  
 - User-facing JSON *instead of* the Markdown table  
 
-## 23 Jul 2026 update: HITL direction decided for now — hand-editing
-`layout.yaml` (Option A) is being trialed before any browser GUI work
-(Option E) starts; see HITL.md decision log for the reasoning and the
-target architecture kept on file for later. Passive component convention
-(boxes + refdes + side table) and grouped-component handling (layout-only
-grouping, Phase 1) are specified in the new GLYPHS.md, not yet implemented.
-Component/module rotation remains explicitly unspec'd pending the passive
-convention's real-world use.
+## 23 Jul 2026 update: HITL direction + schema sketch
+
+Hand-edited `layout.yaml` (Option A) before any browser GUI (Option E);
+see HITL.md. **Schema draft** (nested components, face-banked `sides`, full
+pin census, empty faces kept) is in `examples/layout02.yaml` — not executed
+by the tool. An early hybrid loader/override inside `spine-v1` was
+reverted after hand tests showed fragile obedience; correct path is a separate
+from-document place+route policy. Passive convention and layout-only groups
+live in GLYPHS.md (unimplemented). Module rotation remains unspec'd.
 
 
 ## Key docs map
@@ -107,4 +108,5 @@ convention's real-world use.
 | [docs/ROADMAP.md](ROADMAP.md) | Phased work |
 | [docs/TODO.md](TODO.md) | Deferred language/features |
 | [AGENTS.md](../AGENTS.md) | Contributor / agent norms |
+| [examples/layout02.yaml](../examples/layout02.yaml) | Layout schema sketch (unwired) |
 | [skill/SKILL.md](../skill/SKILL.md) | Draft pi skill |

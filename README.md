@@ -8,7 +8,12 @@ This tool (the 'bootstrap renderer') is intended to help in the production of as
 
 ## Approach
 Electrical connectivity lives in a human-readable **Markdown table** (the
-source of truth, SoT). Geometry generation is largely automatic (heuristic bootstrap), iteratively using human assistance to resolve placement issues. The direction of travel is a cleaner split: computers draw boxes and route wires; humans own hard placement via a layout sidecar (and maybe a browser editor later). See [docs/HITL.md](docs/HITL.md) (human-in-the-loop) and [docs/STATUS.md](docs/STATUS.md).
+source of truth, SoT). Geometry today is a heuristic bootstrap (`spine-v1`).
+Direction of travel: computers draw boxes and route wires; humans own hard
+placement via a **nested layout sidecar** (schema sketch
+[`examples/layout02.yaml`](examples/layout02.yaml), not loaded by the CLI yet)
+and maybe a browser editor later. See [docs/HITL.md](docs/HITL.md) and
+[docs/STATUS.md](docs/STATUS.md).
 
 ```
 User intent →
@@ -34,7 +39,7 @@ Inspired in spirit by [Mermaid](https://mermaid.js.org/): structure in text, mec
 | Wiring docs go stale | Table is the doc; art is generated |
 | Pin tables alone don’t show topology | Art shows modules, buses, branches |
 | Full EDA is overkill for module block diagrams | Lightweight ASCII for firmware/docs |
-| Pure auto-layout hits a wall quickly | Human-in-the-loop geometry (planned) |
+| Pure auto-layout hits a wall quickly | Human-in-the-loop layout dossier (planned; sketch in repo) |
 
 ## Quick example
 

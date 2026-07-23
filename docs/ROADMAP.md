@@ -81,23 +81,32 @@ Deferred board detail: [TODO.md](TODO.md) (`table03+`).
 ## Phase 3 — Layout sidecar (next product bar)
 
 See [HITL.md](HITL.md) (human-in-the-loop). Goal: table + **layout YAML** →
-route/paint → art close to `art02` without heroic auto-place. Try this text
-workflow properly before committing to GUI work.
+**from-document** glyphs/ports → route/paint → art close to `art02` without
+heroic auto-place. Spine stays default bootstrap only.
 
-- [ ] Define layout document schema (positions, optional `pinOrder`/`sides`;
-      top-level maps keyed by stable component identity)
-- [ ] Build glyphs independently of global placement
-- [ ] Route + paint from netlist + layout
-- [ ] CLI: `--layout examples/layout02.yaml`
-- [ ] Freeze `layout02` for the golden path; keep spine bootstrap as default
+**Lesson (2026-07):** a hybrid “YAML overrides inside `spine-v1`” path was
+prototyped, hand-tested as fragile (Y moves ignored net rows, S faces, etc.),
+and **reverted**. Do not revive overlay. Ship complete layout interpretation
+in increments with IR acceptance tests.
+
+- [x] Draft layout schema sketch (nested glyph dossiers + face banks) —
+      `examples/layout02.yaml` (unwired); HITL Option A updated
+- [ ] Write short normativish contract (`docs/LAYOUT.md` or HITL freeze):
+      always four faces, pin census = table, edge order rules, errors
+- [ ] Loader/validate layout YAML vs netlist (no place change yet)
+- [ ] Build glyphs + port sites from layout document only
+- [ ] Route + paint from netlist + port sites
+- [ ] CLI: `--layout examples/layout02.yaml` (`policy: from-document`)
+- [ ] Freeze `layout02` for the golden IR/art path; keep spine as default
 - [ ] Add one expanded NTC-style fixture/layout to exercise repeated small
       components and boundary placement
 - [ ] Record whether trial friction is **schema ergonomics** or
-      **edit/render feedback latency**
+      **edit/render feedback latency** (only after IR obedience works)
 - [ ] Optional: router collision “complaints” for minimal human answers
 
 **Exit:** hand-authored layouts for table02 and the NTC trial regenerate
-acceptable art stably, and the next UX investment is supported by evidence.
+acceptable art stably under from-document, and the next UX investment is
+supported by evidence.
 
 ### Near-term glyph work
 
@@ -220,21 +229,22 @@ If a request needs PCB copper, use EDA. If it needs flowchart control flow, use 
 | 2026-07 | Two-terminal glyphs use boxes; refdes in glyph and specs in metadata table |
 | 2026-07 | Repeated sub-circuits start as layout-only groups; authoring templates deferred |
 | 2026-07 | Generic module rotation remains unspecified pending fixture experience |
+| 2026-07 | Nested layout dossiers: `components.<name>.{x,y,sides:{N,E,S,W:[]}}`; no pinOrder key; face list order = edge order; pin census hard |
+| 2026-07 | Hybrid spine+YAML overlay rejected; from-document place/route only for `--layout` |
 
 Add rows when something normative changes; update SPEC/ARCHITECTURE to match.
-## Near-term (23 Jul 2026 direction)
+## Near-term (post schema sketch)
 
-1. **Hand-edit `layout.yaml` trial (Option A).** Exercise it against
-   `table02` and a new NTC-style fixture. Goal: determine whether the pain
-   is schema ergonomics or feedback-loop latency — see HITL.md decision
-   log for why that distinction matters before deciding what to build next.
+1. **Freeze layout contract + slices:** LAYOUT/HITL norms, then loader → glyph
+   ports → route (from-document). Prove IR obedience on `layout02` before
+   pursuing art02 beauty or GUI. Spine remains no-flag default.
 2. **Passive convention.** Refdes labeling in-glyph, side table for specs,
    standard prefix set. See GLYPHS.md.
 3. **Layout-only grouping (Phase 1).** `group:` tag + cached-interior
    rendering; `edge:` tag + boundary-alignment pass. See GLYPHS.md.
-4. **Gated: browser GUI (Option E).** Only after (1) concludes hand-edited
-   YAML is the actual bottleneck. Target architecture already sketched in
-   HITL.md's decision log so it doesn't need re-deriving when this comes up.
+4. **Gated: browser GUI (Option E).** Only after hand-edit trial with a
+   working from-document path identifies YAML/feedback as the bottleneck.
+   Target architecture already sketched in HITL.md.
 
 Group-template authoring (GLYPHS.md Phase 2) is intentionally not on this
 list — it's a trigger-conditioned future item, not a scheduled one.

@@ -11,11 +11,11 @@ legal in the wiring table* (SPEC.md).
 
 Three kinds, each with a different placement contract:
 
-| Kind        | Ports                          | Orientation concept              |
-| ----------- | ------------------------------- | --------------------------------- |
-| **module**  | N pins, assignable to any face  | `sides:` map (N/E/S/W per pin)    |
-| **passive** | exactly 2, in-line with a wire  | binary `orientation: h \| v`      |
-| **group**   | frozen interior, external ports | same `sides:` contract as module  |
+| Kind        | Ports                           | Orientation concept                                          |
+| ----------- | ------------------------------- | ------------------------------------------------------------ |
+| **module**  | N pins, banked onto faces       | layout `sides: { N,E,S,W: pin[] }` (list order = edge order) |
+| **passive** | exactly 2, in-line with a wire  | binary `orientation: h \| v` (not four face banks)            |
+| **group**   | frozen interior, external ports | same face-bank `sides` contract as module                    |
 
 A group is a module from the placement engine's point of view — the only
 difference is its interior is pre-rendered once and cached, not solved live
@@ -103,17 +103,16 @@ above has been used in practice, per the 2026-07 discussion.
 
 Two distinct concepts, kept separate rather than unified into one generic
 "rotate" feature:
-- **Modules/groups:** already representable via the existing `sides:` map
-  (arbitrary per-pin face assignment). Open question: whether `spine-v1.js`'s
-  bootstrap actually honors `sides:` overrides today (e.g. left/right-only
-  placement) or currently assumes top/bottom — needs a code-level check
-  before this is spec'd into any editor affordance.
-- **Passives:** binary `orientation: h | v`, not a 4-way `sides:` map — a
-  2-terminal passive has no meaningful "face," just an axis.
+- **Modules/groups:** layout face banks (`sides` N/E/S/W pin lists). Draft
+  shape: [examples/layout02.yaml](../examples/layout02.yaml) / [HITL.md](HITL.md).
+  Bootstrap `spine-v1` does **not** read layout files and does not honor author
+  face banks (faces are assigned internally). From-document place owns that.
+- **Passives:** binary `orientation: h | v`, not four face banks — a
+  2-terminal passive has no meaningful multi-pin face stack, just an axis.
 
 ## Open questions carried forward
 
-- Does `spine-v1.js` respect `sides:` overrides for arbitrary face
-  assignment today? (verification task, not yet done)
 - Route-on-drop vs. live-reroute during drag — deferred to whenever the
   browser GUI (Option E in HITL.md) is actually built.
+- Whether passives ever use micro face banks vs orientation only — after
+  real passive fixtures.

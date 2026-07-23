@@ -7,7 +7,8 @@
 This document defines the **author-facing electrical language** (the Markdown
 connectivity table) and the **meaning** a correct tool must preserve when
 drawing. It does **not** mandate character coordinates. Geometry lives outside
-the table (bootstrap place today; layout sidecar / human-in-the-loop next).
+the table (bootstrap `spine-v1` today; nested layout sidecar / HITL next — see
+HITL.md and `examples/layout02.yaml` schema sketch; not CLI-loaded yet).
 
 Art may vary so long as topology, labels, and diagram conventions are satisfied.
 
@@ -41,10 +42,12 @@ A wiring document is Markdown. The renderer looks for:
 3. Optional prose before/after (ignored by the renderer except footnotes).
 
 Future: optional YAML frontmatter, component-spec metadata, and/or a **sibling
-layout file** for placement and presentation (glyph set, page breaks, pin
-sides/order, passive axis, layout-only groups, boundary alignment). Those must
-not change electrical meaning of the table. See ARCHITECTURE, HITL, and
-GLYPHS.
+layout file** for placement (nested glyph dossiers: box `x`/`y` and face-banked
+pin lists; later passive axis, layout-only groups, boundary alignment,
+presentation profiles). Layout must **not** change electrical meaning of the
+table. Pin names in a layout dossier are the same tokens as table cells; census
+must match. See ARCHITECTURE, HITL, GLYPHS, and the unwired
+`examples/layout02.yaml` sketch.
 
 ### 3.1 Table geometry
 

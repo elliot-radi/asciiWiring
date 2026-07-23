@@ -160,8 +160,10 @@ Layout reads roles; paint does not need them.
 ```
 LayoutOptions {
   policy: "spine-v1" | "from-document"  // bootstrap vs HITL sidecar
-  layoutDocument?: object               // future: positions, pinOrder, sides,
-                                        // passive orientation, groups, edges
+  layoutDocument?: object               // nested components map; see HITL +
+                                        // examples/layout02.yaml sketch
+                                        // (x, y, sides face-banks; later:
+                                        //  orientation, group, edge)
   // channel spacing, page width, fold buses, …
 }
 
@@ -186,10 +188,15 @@ LabelGeom { text, x, y, kind: "net" | "note" | "title" }
 Segment  { x1,y1,x2,y2 }    // axis-aligned
 ```
 
-Coordinates are **integer character cells**. The sidecar's top-level component
-collections should be maps keyed by stable component identity rather than
-arrays, keeping one-component edits local and avoiding reorder-only diffs.
-Exact schema, validation, and identity rules land with Phase 3.
+Coordinates are **integer character cells**.
+
+**Layout document (draft, unwired):** map `components.<tableName>` → glyph
+dossier `{ x, y, sides: { N, E, S, W: pin[] } }`. Face list order is edge order
+(N/S left→right, E/W top→bottom). Pin multiset must match the netlist named
+ports. Nested dossiers preferred over separate top-level pinOrder/sides maps.
+Do not implement as optional overrides inside `spine-v1` place heuristics;
+`policy: from-document` builds port sites from the dossier then routes.
+Schema sketch: [examples/layout02.yaml](../examples/layout02.yaml); HITL.md.
 
 ### 3.4.1 Glyph build (target seam)
 
@@ -197,7 +204,7 @@ Before placement, a glyph builder should derive module, passive, or composite
 geometry and external ports from the netlist plus non-electrical metadata.
 Drawing conventions live in [GLYPHS.md](GLYPHS.md).
 
-- Modules expose N ports with layout-controlled face/order preferences.
+- Modules expose N ports with layout-controlled face banks (`sides` lists).
 - Two-terminal passives use regular boxes and a horizontal/vertical axis.
 - Layout-only groups retain their flat electrical components but expose a rigid
   cached interior and module-like external boundary to placement.
