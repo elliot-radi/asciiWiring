@@ -5,7 +5,7 @@
 components:
   ESP32-C3: { x: 1, y: 0 }
   ADS1115: { x: 24, y: 0 }
-  RELAY: { x: 1, y: 14 }
+  RELAY: { x: 0, y: 25 }
   ZMCT103C: { x: 24, y: 17 }
 
 # Pin order per module (aesthetic override; electrical SoT is table order)
