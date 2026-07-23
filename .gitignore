@@ -2,6 +2,10 @@
 *.md.backup
 *.bak
 *~
+*.swp
+*.swo
+.*.swp
+.*.swo
 
 # OS
 .DS_Store
