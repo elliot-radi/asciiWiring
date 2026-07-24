@@ -9,10 +9,11 @@ This repository is a **tool** (Node library + CLI). An optional **pi skill**
 
 Electrical connectivity lives in a human-readable **Markdown table** (the
 source of truth, SoT). Geometry today is a heuristic bootstrap (`spine-v1`).
-Direction of travel: computers draw boxes and route wires; humans own hard
-placement via a **layout sidecar**
-([`examples/layout02.yaml`](examples/layout02.yaml); CLI `--layout <file.yaml>`).
-Spine place/route first; YAML owns box `x`/`y` for HITL. See
+HITL direction ([rfc/004](docs/rfc/004-hitl-place-loop-and-modules-only.md)):
+humans own packing via a **layout YAML**; tool paints modules from that file
+and (later) routes wires on the frozen packing. Transitional CLI still uses
+`node src/render.js` / `--layout` / `--emit-layout`; target grammar is
+`ascw TABLE.md [LAYOUT.yaml]` with `-m` for modules-only. See
 [`docs/STATUS.md`](docs/STATUS.md) and [`docs/README.md`](docs/README.md).
 
 ```
@@ -41,7 +42,7 @@ components have **ports.** These are not flowchart graphs.
 | Wiring docs go stale | Table is the doc; art is generated |
 | Pin tables alone don’t show topology | Art shows modules, buses, branches |
 | Full EDA is overkill for module block diagrams | Lightweight ASCII for firmware/docs |
-| Pure auto-layout hits a wall quickly | Human-in-the-loop layout dossier (`--layout`) |
+| Pure auto-layout hits a wall quickly | Human-in-the-loop layout YAML (place loop; route later) |
 
 ## Quick example
 
@@ -129,13 +130,15 @@ cd asciiWiring
 npm install
 node src/render.js examples/table01.md
 node src/render.js examples/table02.md
-node src/render.js --layout examples/layout02.yaml examples/table02.md
-node src/render.js --emit-layout examples/table02.md   # bootstrap layout YAML
+node src/render.js --layout examples/layout02.yaml examples/table02.md  # transitional
+node src/render.js --emit-layout examples/table02.md   # seed layout YAML
 node src/render.js --debug examples/table02.md   # IR summary on stderr
 npm test                                         # → node src/selftest.js
+# target (rfc/004): ascw TABLE.md | ascw --emit-layout TABLE.md |
+#                   ascw TABLE.md LAYOUT.yaml | ascw -m TABLE.md LAYOUT.yaml
 ```
 
-Requires Node ≥ 18. Runtime dependency: `js-yaml` (layout sidecar).
+Requires Node ≥ 18. Runtime dependency: `js-yaml` (layout YAML).
 
 ## Design pillars
 
@@ -144,7 +147,8 @@ Requires Node ≥ 18. Runtime dependency: `js-yaml` (layout sidecar).
 3. **Deterministic paint** given a netlist + layout.
 4. **Domain genre:** module wiring / block diagrams — not full EDA.
 5. **Human-in-the-loop placement** when auto bootstrap isn’t enough. See
-   [rfc/001](docs/rfc/001-layout-sidecar-and-hitl.md).
+   [rfc/001](docs/rfc/001-layout-sidecar-and-hitl.md),
+   [rfc/004](docs/rfc/004-hitl-place-loop-and-modules-only.md).
 6. **Docs-native:** Markdown in, ASCII out, diff-friendly.
 
 ## Out of scope

@@ -44,6 +44,8 @@ Rules that apply to all layers:
 | `rfc/000-electrical-model-and-pipeline.md` | History | Founding decisions: nets as hyperedges, derived roles, tee-vs-series passives, pipeline shape, no-Dagre heuristic | Never — append-only | Current status, how-to-build instructions |
 | `rfc/001-layout-sidecar-and-hitl.md` | History | Layout sidecar decision: options A–E, from-document path, hybrid overlay rejected, browser target scoped | Major layout reversals or new HITL decisions | Current status, normative schema (lives in `LAYOUT.md`) |
 | `rfc/002-table01-rendering.md` | History | Table01 algorithmic rationale: classification evidence, channel order, placement rules, implementation order | Never — append-only | Normative syntax or paint rules (lives in `SPEC.md`, `GLYPHS.md`) |
+| `rfc/003-docs-topology-and-rfc-process.md` | History | Four-layer docs topology and RFC process | Never — append-only | Living dashboard content |
+| `rfc/004-hitl-place-loop-and-modules-only.md` | History | HITL place vs route; `ascw TABLE [LAYOUT]`; `-m` modules-only; no-op route default; abandon spine+slide | When place/route stage or CLI grammar reverses | Current status, living how-to, schema field lists |
 | `README.md` (this file) | Meta | Topology manifest, decision tree, enforcement rule | New doc created or deleted, layer boundary changes | Anything else |
 
 ## Decision tree

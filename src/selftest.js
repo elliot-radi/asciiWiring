@@ -189,6 +189,72 @@ console.log('\nfrom-document policy tests');
       /AIN0 ●──TPO/.test(artAds) || /AIN0 ●─+TPO/.test(artAds)
     );
   }
+
+  // Compact HITL trial (/tmp/l.yaml class): move ADS +x, RELAY −y/−x, ZMCT −x/−y.
+  // Hinge-only used to collapse face-normal stems and park H on the N wall.
+  {
+    let compact = layout2
+      .replace(/(ADS1115:\n\s+x:\s*)\d+/, '$127')
+      .replace(/(RELAY:\n\s+x:\s*)\d+/, '$11')
+      .replace(/(RELAY:\n\s+x:\s*1\n\s+y:\s*)\d+/, '$113')
+      .replace(/(ZMCT103C:\n\s+x:\s*)\d+/, '$128')
+      .replace(/(ZMCT103C:\n\s+x:\s*28\n\s+y:\s*)\d+/, '$115');
+    const artC = render(table2, {
+      layout: { policy: 'from-document', layoutDocument: compact },
+    });
+    // IN N-face: stem │ at least one row above the ● on RELAY crown.
+    const linesC = artC.split('\n');
+    let inRow = -1;
+    let inCol = -1;
+    for (let i = 0; i < linesC.length; i++) {
+      if (!/│\s*IN\s*│/.test(linesC[i])) continue;
+      // crown is the prior border row with ●
+      for (let j = i - 1; j >= Math.max(0, i - 2); j--) {
+        const m = linesC[j].match(/┌─*●─*┐/);
+        if (!m) continue;
+        inRow = j;
+        inCol = linesC[j].indexOf('●');
+        break;
+      }
+      break;
+    }
+    let stemClear = false;
+    if (inRow > 0 && inCol >= 0) {
+      const above = linesC[inRow - 1] || '';
+      const ch = above[inCol] || '';
+      stemClear = ch === '│' || ch === '┤' || ch === '├' || ch === '┘' || ch === '┐';
+    }
+    check('from-document compact RELAY −y keeps IN stem clearance', stemClear);
+
+    // AIN3 E exit: must not be "●┐" glued — at least one ─ before corner
+    check(
+      'from-document compact ADS keeps AIN3 outward run',
+      /AIN3 ●─+[┐└]/.test(artC) || /AIN3 ●─┐/.test(artC)
+    );
+
+    // ZMCT OUT: horizontal approach must not share the N border row (● is on
+    // border; H channel sits above). Look for ┌──● or similar with mid-row ─
+    // above the box crown, not "──●──" as the north wall itself.
+    let outOk = false;
+    for (let i = 0; i < linesC.length; i++) {
+      if (!/OUT/.test(linesC[i])) continue;
+      // N border of ZMCT is typically the prior row with ●
+      const crown = linesC[i - 1] || '';
+      const outCol = crown.indexOf('●');
+      if (outCol < 0) continue;
+      // cell above ● should be wire or space from inserted stem, not empty wall-only
+      const above = linesC[i - 2] || '';
+      const ch = above[outCol] || ' ';
+      outOk = ch === '│' || ch === '┘' || ch === '┐' || ch === '┤' || ch === '├';
+      // and crown should not be a continuous H through the port as only path
+      // (wall collision looked like ──●── with no stem above)
+      if (!outOk && /┌.*●.*┐/.test(crown) && ch === ' ') {
+        outOk = false;
+      }
+      break;
+    }
+    check('from-document compact ZMCT OUT clears N wall', outOk);
+  }
 }
 
 console.log('\nemit-layout tests');

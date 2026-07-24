@@ -417,6 +417,7 @@ function placeBranchModule(ctx) {
     if (other.x + other.w + 12 <= brX || other.x >= brX + brW) continue;
     brX = other.x + other.w + 14;
   }
+  // Keep stem column over the box interior when possible (legacy pinch).
   if (stemX < brX + 1) brX = Math.max(0, stemX - 2);
   if (stemX > brX + brW - 2) brX = Math.max(0, stemX - brW + 3);
 
@@ -431,7 +432,11 @@ function placeBranchModule(ctx) {
   };
   boxes.push(brBox);
 
-  const stemDotX = clamp(stemX, brBox.x + 1, brBox.x + brBox.w - 2);
+  // N/S face ports: face mid-column (RELAY already matched by chance; ZMCT
+  // title width left the ADS stem near W while OUT/GND followed stemX).
+  // Lateral offset elbows at teeY — never H-jog on the north border row.
+  const faceMidX = brBox.x + Math.floor(brBox.w / 2);
+  const stemDotX = clamp(faceMidX, brBox.x + 1, brBox.x + brBox.w - 2);
   portGeom.push({
     portId: stemPort.id,
     x: stemDotX,
@@ -441,14 +446,18 @@ function placeBranchModule(ctx) {
   });
   if (stemPort.label) portLabels[stemPort.id] = stemPort.label;
 
-  wires.push({
-    netId: stemNet.id,
-    segments: [{ x1: stemX, y1: teeY, x2: stemX, y2: brBox.y }],
-  });
-  if (stemDotX !== stemX) {
+  if (stemDotX === stemX) {
     wires.push({
       netId: stemNet.id,
-      segments: [{ x1: stemX, y1: brBox.y, x2: stemDotX, y2: brBox.y }],
+      segments: [{ x1: stemX, y1: teeY, x2: stemX, y2: brBox.y }],
+    });
+  } else {
+    wires.push({
+      netId: stemNet.id,
+      segments: [
+        { x1: stemX, y1: teeY, x2: stemDotX, y2: teeY },
+        { x1: stemDotX, y1: teeY, x2: stemDotX, y2: brBox.y },
+      ],
     });
   }
 

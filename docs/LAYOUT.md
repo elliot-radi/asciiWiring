@@ -47,18 +47,28 @@ tweaks, not rewrites.
 
 ## 2. Policy split
 
-The renderer has one place policy per invocation:
+Geometry path per invocation ([rfc/004](rfc/004-hitl-place-loop-and-modules-only.md)):
 
-| `policy`        | When                                   | What it reads                  |
-|-----------------|----------------------------------------|--------------------------------|
-| `spine-v1`      | default CLI (no `--layout` flag)       | netlist only                   |
-| `from-document` | CLI invoked with `--layout <file>`     | netlist **and** layout document|
+```text
+ascw [flags] TABLE.md [LAYOUT.yaml]
+```
 
-`from-document` **must not** reimplement place+route. Course correction:
-run **spine-v1** for place+route quality, then **rigid-apply** dossier `x`/`y`
-(and keep loader-enforced face census). When the YAML matches spine origins,
-ASCII is **identical** to the default CLI. Spine remains the bootstrap default;
-the sidecar overrides geometry, not routing intelligence.
+| Invocation | Geometry | Stages | Art |
+|------------|----------|--------|-----|
+| `ascw TABLE.md` | none (bootstrap) | spine-v1 full | bootstrap full |
+| `ascw --emit-layout TABLE.md` | write layout YAML | place seed only | YAML stdout |
+| `ascw TABLE.md LAYOUT.yaml` | layout document | place → **route** → paint | full pipeline; route may be no-op |
+| `ascw -m TABLE.md LAYOUT.yaml` | layout document | place → paint | modules chrome only |
+
+**Only modules-art flag (no wires):** `-m` / `--modules-only`. **No `--route`.**
+Routed art is default when a layout file is present and `-m` is absent.
+
+Under a layout file, HITL **does not** morph spine wire lists into truth.
+Interconnect is only the route stage (no-op or real).
+
+**Gap:** `ascw` grammar, modules-from-dossier, and no-op route are not
+implemented; transitional `--layout` + spine-slide may still exist. Debt, not
+contract.
 
 ---
 
@@ -85,8 +95,11 @@ Rules:
 - **Each dossier has exactly `x`, `y`, `sides`.** Nothing else is honored yet
   (§7 lists reserved keys).
 - **`x`, `y` are integers** (character cells). The box border's top-left cell.
-  Width and height are **derived** by the glyph builder from pin count and
-  labels — never authored.
+  Width and height are **derived** by the glyph builder from pin count,
+  labels, and padding rules.
+- **`w`, `h` (optional, reference):** emit may write derived size for human
+  orientation. **Gap:** loader should accept and currently may ignore; authored
+  override / padding sacrifice is open (rfc/004), not required for modules-only.
 - **`sides` always has all four faces** (`N`, `E`, `S`, `W`), even if empty.
   Empty face = `[]`. This is strict, not default-filled: a missing face key
   is an error (§6), so HITL editing never silently invents a face.
@@ -205,11 +218,12 @@ When one of these is specced, it moves out of this list and into §3.
 ## 9. Authoring path (bootstrap emit)
 
 Because Mode B requires a full dossier per component, hand-writing the first
-file is tedious. CLI:
+file is tedious. Target CLI ([rfc/004](rfc/004-hitl-place-loop-and-modules-only.md)):
 
 ```bash
-node src/render.js --emit-layout examples/table02.md > my-layout.yaml
-node src/render.js --layout my-layout.yaml examples/table02.md
+ascw --emit-layout examples/table02.md > my-layout.yaml
+ascw examples/table02.md my-layout.yaml          # place → route → paint
+ascw -m examples/table02.md my-layout.yaml       # modules only
 ```
 
 `--emit-layout` dumps a valid Mode B document from the **current auto-place
@@ -217,33 +231,26 @@ policy (`spine-v1`)**: every component, every named pin banked onto the same
 face spine chose, `x`/`y` from box origins. Implementation
 (`src/layout/emit.js`) reads `PortGeom` + boxes on the layout plan; it does
 not invent placement. Anonymous `x` ports stay off `sides` (empty banks on
-passives). Round-trip: emit → `--layout` must match default CLI art when the
-human has not edited yet (selftest). Hand reference: `examples/layout02.yaml`.
+passives). Hand reference: `examples/layout02.yaml`.
+
+**Gap:** until `ascw` lands, transitional `node src/render.js --emit-layout` /
+`--layout FILE` may still work.
 
 ---
 
 ## 10. Implementation checklist
 
-These items track the `from-document` path from schema to working render.
-They belong here because each one changes the contract between the layout
-sidecar and the pipeline.
+Tracks layout-document contract vs pipeline ([rfc/004](rfc/004-hitl-place-loop-and-modules-only.md)).
 
 - [x] Loader + validate layout YAML vs netlist (census, schema errors per §6)
-- [x] CLI flag `--layout <file>` reads YAML and forwards to `from-document` policy
-- [x] Build/apply geometry from layout (spine-first course correction; no parallel router)
-- [x] Route + paint via spine-v1; from-document rigid x/y overlay + loader census
-  (identity when YAML matches spine — locked in selftest)
-- [x] **Bootstrap emit helper (`--emit-layout`)** — seed dossiers from spine-v1
-  `PortGeom` + box origins (table02 emission matches layout02 structure;
-  emit → from-document identity locked in selftest)
-- [ ] Freeze `layout02` as golden emit+from-document pair; keep spine as default
-- [ ] Improve non-identity rigid moves (stem elbows / intermediate colums that
-  are not port cells may need a touch-up pass after large x/y deltas)
-- [ ] Add NTC-style fixture/layout to exercise repeated small components and
-  boundary placement
-- [ ] Record whether trial friction is schema ergonomics or edit/render feedback
-  latency (only after infra is pleasant)
-- [ ] Optional: router collision "complaints" for minimal human answers
+- [x] Bootstrap `--emit-layout` seeds dossiers from spine box origins + face banks
+- [ ] **`ascw` bin** + grammar `TABLE.md [LAYOUT.yaml]` + `-m` / `--modules-only`
+- [ ] Modules-from-dossier place under layout file
+- [ ] Route stage hook (no-op first; real router later — **no `--route` flag**)
+- [ ] Drop spine wire morph under layout file
+- [ ] Emit optional reference `w`/`h`; loader accept/ignore until override policy
+- [ ] Selftests: layout-aware packing; spine goldens for table-only CLI
+- [ ] NTC-style fixture for repeated small components / boundary placement
 
 ---
 

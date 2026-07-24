@@ -198,15 +198,21 @@ Coordinates are **integer character cells**.
 ports. Schema contract: [LAYOUT.md](LAYOUT.md); example
 [examples/layout02.yaml](../examples/layout02.yaml); HITL history rfc/001.
 
-**Policy `from-document` (implemented, spine-first):** loader validates the
-YAML against the netlist (census/schema). Place+route still run as
-**`spine-v1`** so bootstrap quality is preserved. The dossier then
-**rigid-applies** each component's authored `x`/`y` (ports and wire ends that
-sat on those port cells move with the box). When YAML origins match spine
-placement, art is **identical** to the default CLI (selftest identity bar).
-This is **not** a second placer/router and **not** hybrid overrides inside
-spine heuristics. Large automatic `x`/`y` deltas without a re-route pass are
-lossy — see §3.4.2.
+**Policy `from-document` / place file (transition):** loader validates the
+YAML against the netlist (census/schema). Historical bridge ran **spine-v1**
+then rigid-applied dossier `x`/`y` onto spine wires. That **wire morph is
+abandoned as the HITL quality path** ([rfc/004](rfc/004-hitl-place-loop-and-modules-only.md)).
+
+**Target under a place file:**
+
+1. **Place loop** — glyph chrome (boxes, ports, labels) from dossier + table;
+   **no interconnect** until the route stage exists.
+2. **Route loop** *(Gap)* — ortho/stem router from fixed port sites; place YAML
+   unchanged across tries.
+
+**Gap:** modules-only packing render and place-file CLI defaults are not
+wired yet; code may still morph spine wires under `--layout`. Default CLI
+*without* a place file remains full **spine-v1** bootstrap. See §3.4.2.
 
 ### 3.4.1 Glyph build (target seam)
 
@@ -308,60 +314,41 @@ Side-by-side:
 | Branch attachment | Route after both boxes exist | Stem from **existing** bus `PortGeom` to child placed **after** stem column exists |
 | Backbone alignment | Free corridor between rows | Shared **`netY`** through bus ports |
 
-#### What `from-document` does today (course correction)
+#### HITL under a place file (rfc/004) — two loops, one IR
 
-Do **not** re-run a second router. Flow:
+Paper model: module chrome → pack/tape boxes → draw wires → rework place if
+ugly. Spine full bootstrap remains the **no-file** path for simple fixtures.
 
 ```
-netlist ──► spine-v1 (full constructive place+route)
-                 │
-                 ▼
-         layout YAML (validated census)
-                 │
-                 ▼
-         rigid-apply dossier x/y deltas
-         (box + that component’s ports + segment
-          ends that sat on those port cells + some labels)
-                 │
-                 ▼
-              paint
+                 table (electrical SoT)
+                          │
+            ┌─────────────┴─────────────┐
+            ▼                           ▼
+     glyph size + ports          place YAML (human)
+     (labels, faces, pad)        x/y, sides [(w/h ref)]
+            │                           │
+            └─────────────┬─────────────┘
+                          ▼
+              PLACE LOOP art (modules only)
+                          │
+                   (later) ROUTE LOOP
+                   fixed ports → segments
+                          ▼
+                    full art paint
 ```
 
-- **Identity:** dossier `x`/`y` equal spine box origins → ASCII matches default CLI
-  (`examples/layout02.yaml` is kept aligned for table02; selftest locks identity).
-- **Small bumps:** endpoints and short stubs often still look fine; geometry is continuous enough.
-- **Large bumps:** segments that are **not** “owned” solely as a port endpoint—
-  stem elbows at `stemX`, long vertical drops, H runs planned for old gutters—
-  **stay where spine put them** or only partially follow. Wires then stretch,
-  cross odd space, or detach visually. That is not paint failing; the wire
-  graph was **planned jointly with the old packing** and never recomputed.
+- **Layout path (next):** place modules from dossier; route stage after place
+  (no-op until real router); paint. CLI: `ascw TABLE.md LAYOUT.yaml` or
+  `ascw -m …` for modules-only. Emit: `ascw --emit-layout TABLE.md`.
+- **Route stage:** pure interconnect from fixed ports; does not rewrite layout
+  YAML; **no `--route` flag** (default when layout present and not `-m`).
+- **Abandoned:** spine+slide / rigid wire morph as HITL interconnect strategy.
 
-Why elbows matter: a branch stem is typically more than a straight line
-between two port cells. Spine stores multi-segment paths (out from bus port →
-vertical at `stemX` → maybe jog into the child N pin). Moving only the
-child box updates the N-port cell and any segment vertices that **coincided**
-with that cell; the intermediate column often **does not move**. Same idea for
-bus–bus rails vs a bus slid far away: rail cells were never a function of the
-new origin alone.
+**Gap:** `ascw` grammar, modules-from-dossier, no-op route not implemented;
+transitional `--layout` may still morph spine wires.
 
-#### Target seam (keep the ideal in mind, don’t fake it)
-
-Longer-term HITL path that matches the ideal picture without throwing away spine:
-
-1. **Glyph size** from faces/labels (and later orientation/group).
-2. **Place** from layout dossier (or emit defaults with honest gutters).
-3. **Route** from fixed port sites with a shared ortho/stem policy (still may
-   reuse spine’s channel scoring as a *router input*, not a second brain that
-   re-places boxes).
-4. Paint unchanged.
-
-Until (3) is a real stage boundary, treat large authoring moves as
-**“change geometry + expect a re-route”**, not “translate a finished schematic.”
-Bootstrap emits (`--emit-layout`, planned) should dump spine origins/faces so
-HITL **starts** from a packing the router already believed.
-
-Cross-refs: [LAYOUT.md](LAYOUT.md) (sidecar contract + checklist),
-[STATUS.md](STATUS.md) (what is wired), §6 (layout philosophy / hops).
+Cross-refs: [LAYOUT.md](LAYOUT.md), [STATUS.md](STATUS.md),
+[rfc/004](rfc/004-hitl-place-loop-and-modules-only.md), §6 (hops).
 
 ### 3.5 Paint
 

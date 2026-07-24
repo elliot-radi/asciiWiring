@@ -9,10 +9,10 @@ topology (where to put what), see [`docs/README.md`](docs/README.md).
 - **Tool** (`src/`): Markdown wiring **table** → netlist → place/route/paint → **ASCII**.
 - **Skill** (`skill/SKILL.md`): optional LLM workflow to draft tables and run the CLI. Thin client only.
 - **Electrical SoT:** the connectivity table (no coordinates in the matrix).
-- **Geometry direction:** auto `spine-v1` is a **bootstrap only**. HITL path:
-  layout sidecar (`examples/layout02.yaml`) via CLI `--layout` (spine-first
-  `from-document`: place/route then rigid x/y). See ARCHITECTURE §3.4.2 and
-  [rfc/001](docs/rfc/001-layout-sidecar-and-hitl.md).
+- **Geometry direction:** auto `spine-v1` is **bootstrap only** (`ascw TABLE`).
+  HITL: `ascw TABLE LAYOUT` = place → route → paint (route no-op until real
+  router); `-m` = modules only. Do **not** grow spine wire-morph under a layout
+  file. See [rfc/004](docs/rfc/004-hitl-place-loop-and-modules-only.md).
 
 Do **not** freehand multi-box ASCII in the LLM. Do **not** treat perfect
 auto-layout as the bar. Do **not** re-thread layout overrides into
@@ -26,13 +26,21 @@ auto-layout as the bar. Do **not** re-thread layout overrides into
 
 ## Commands
 
+Target CLI ([rfc/004](docs/rfc/004-hitl-place-loop-and-modules-only.md)); transitional
+`node src/render.js` until `ascw` lands:
+
 ```bash
+npm test
+# bootstrap full art
 node src/render.js examples/table01.md
 node src/render.js examples/table02.md
-node src/render.js --layout examples/layout02.yaml examples/table02.md
-node src/render.js --emit-layout examples/table02.md   # bootstrap layout YAML
-node src/render.js --debug examples/table02.md   # art stdout; IR summary stderr
-npm test                                         # src/selftest.js
+# seed layout YAML
+node src/render.js --emit-layout examples/table02.md
+# target grammar (not all wired yet):
+#   ascw TABLE.md
+#   ascw --emit-layout TABLE.md
+#   ascw TABLE.md LAYOUT.yaml
+#   ascw -m TABLE.md LAYOUT.yaml
 ```
 
 After layout/paint/parse changes: **always** `npm test`. Prefer small edits
@@ -44,8 +52,8 @@ over whole-file rewrites of `layout/`.
 
 - Keep table electrical; put geometry in layout seams, never new pin-cell magic for cosmetics.
 - Pick the right layer: content (table) vs presentation (glyphs/paint) vs place policy vs route.
-- Implement layout in **increments** with IR/acceptance checks; prefer a separate `from-document` path over overlaying `spine-v1`.
-- Add/adjust `examples/tableNN` + art/golden when bootstrap behavior changes; keep `layout02` aligned with spine for identity tests.
+- Implement place/route as **stage seams** (modules-only packing next; real route later) — not hinge patches on spine wires.
+- Add/adjust `examples/tableNN` + art/golden when bootstrap behavior changes.
 - Discuss or write a short note before ambiguous geometry/language changes.
 - For multi-net `x` passives: two nets + body, **not** series-on-stem.
 - Joins = same net (`├┤┬┴`, rare `┼`). Different nets crossing = hop `\` only.
@@ -57,7 +65,7 @@ over whole-file rewrites of `layout/`.
 - Encode feedthrough TBs / exterior labels without SPEC + backlog decisions.
 - Blow the ontology into general CAD or Mermaid-flowchart clones.
 - Large `spine-v1.js` rewrites without syntax check + tests (past footgun).
-- Reintroduce hybrid “layoutDoc overrides inside spine-v1” without an explicit decision to abandon from-document.
+- Reintroduce hybrid layout overrides inside `spine-v1` or new spine+slide wire morph as HITL strategy.
 - Create new `docs/` files without updating `docs/README.md`.
 
 ## Drift rule

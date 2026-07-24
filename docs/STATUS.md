@@ -8,8 +8,8 @@
 ## One-liner
 
 **Tool** (Node library + CLI) that turns signal-first Markdown **wiring
-tables** into ASCII module diagrams — soon with an explicit **geometry
-layer** (layout sidecar) so humans place, computers draw and route.
+tables** into ASCII module diagrams, with an explicit **geometry layer**
+(place YAML) so humans pack modules and (later) the computer routes.
 Optional **pi skill** is a thin client over the tool, not the whole product.
 
 ## Product framing: skill vs tool
@@ -32,7 +32,8 @@ Optional **pi skill** is a thin client over the tool, not the whole product.
 - **Fixtures:**
   - `table01` / `art01` / `golden01` — ESP32 + OLED + button + pullup
   - `table02` / `art02` / `golden02` — pump controller **module-level**
-- **CLI:** `node src/render.js`, `--debug`, `node src/selftest.js`
+- **CLI (today):** `node src/render.js`, `--debug`, `node src/selftest.js`
+- **CLI (rfc/004 target):** `ascw [flags] TABLE.md [LAYOUT.yaml]`; see north star
 - **Docs topology:** [README.md](README.md) (manifest), SPEC, ARCHITECTURE,
   LAYOUT, GLYPHS, STATUS, AGENTS, RFCs
 
@@ -52,8 +53,9 @@ not guaranteed art-director output — especially off-spine stacks.
 | Item | Notes |
 |------|-------|
 | Perfect auto placement | Bridge too far for pure heuristics; see rfc/001 |
-| Layout sidecar file | `examples/layout02.yaml` loaded via `--layout`. **Spine-first course correction:** place+route stays spine-v1; YAML applies rigid x/y (identity when matching spine). Loader enforces pin census. See LAYOUT.md §10 |
-| Browser floorplan | Gated editor for layout file; no work until sidecar trial identifies bottleneck. See rfc/001 |
+| Layout YAML + HITL CLI | Loader + emit exist (legacy flags). **rfc/004 grammar:** `ascw [flags] TABLE.md [LAYOUT.yaml]`; `-m` / `--modules-only`; no `--route`. Default table+layout = place → route → paint (route no-op until Deliverable B). **Not implemented yet** |
+| Real route under layout file | No-op stub first; real router later; same `ascw TABLE LAYOUT` |
+| Browser floorplan | Compatible with 2-loop/1-IR model; no work until place-loop trial wants it. See rfc/001, rfc/004 |
 | Passive refdes/spec metadata | Convention in GLYPHS.md; parser/render support not implemented |
 | Layout-only grouping / edge alignment | Direction in GLYPHS.md; not implemented |
 | Feedthrough TB semantics | Still needs table03+ language decisions. See backlog below |
@@ -70,13 +72,18 @@ not guaranteed art-director output — especially off-spine stacks.
 
 ## Current north star (sequence)
 
-1. Layout loader + spine-first from-document + **`--emit-layout`** are wired
-   (identity round-trip in selftest). See LAYOUT.md §9–§10.
-2. Hand-edit trial on table02 (+ later NTC fixture): emit → tweak x/y → `--layout`
-3. Distinguish schema-editing pain from slow visual feedback before choosing
-   UX work
-4. Add layout-only grouping / boundary alignment as fixture pressure requires
-5. Optional: router complaints or grid browser, selected from trial evidence
+Per [rfc/004](rfc/004-hitl-place-loop-and-modules-only.md):
+
+1. **`ascw` CLI + modules-from-dossier + no-op route** (next) — grammar in
+   rfc/004; table+layout draws place→route→paint with empty wires until a real
+   router; `-m` skips route explicitly.
+2. Hand-edit packing on table02: `--emit-layout` → edit YAML →
+   `ascw TABLE LAYOUT` until the page reads.
+3. **No further spine+slide / wire-morph** under a layout file (delete when
+   new path lands).
+4. **Real router** behind the same default table+layout invocation (Deliverable B)
+   when packing is boring; bootstrap remains `ascw TABLE` (spine).
+5. Glyph extras (group/edge) and browser only under fixture/UX pressure.
 6. Skill package when invocation story is boring
 
 ## Fixture ladder
@@ -94,12 +101,15 @@ not guaranteed art-director output — especially off-spine stacks.
 |------|-----------|------|
 | Feedthrough TB semantics | table03 language design | Backlog (here) |
 | Passive refdes rendering + side-table parsing | Glyph convention settled | GLYPHS.md `Gap:` |
-| Layout-only grouping (`group:` tag) | from-document path works | GLYPHS.md `Gap:` |
-| Boundary alignment (`edge:` tag) | from-document path works | GLYPHS.md `Gap:` |
-| Browser GUI (Option E) | Hand-edit trial identifies YAML/feedback as bottleneck | rfc/001 target architecture |
+| `ascw` bin + `TABLE [LAYOUT]` grammar + `-m` | rfc/004 CLI locked | rfc/004, LAYOUT.md |
+| Modules-from-dossier + no-op route under layout | rfc/004 Deliverable A | rfc/004, LAYOUT.md |
+| Real router (same CLI, no new flag) | packing solid | rfc/004 Deliverable B |
+| Layout-only grouping (`group:` tag) | place loop works | GLYPHS.md `Gap:` |
+| Boundary alignment (`edge:` tag) | place loop works | GLYPHS.md `Gap:` |
+| Browser GUI (Option E) | place-loop trial wants canvas | rfc/001, rfc/004 |
 | Skill update for passive/table drafting | GLYPHS.md convention stable | skill/SKILL.md |
-| `render --emit-layout` helper | **done** — `src/layout/emit.js`, CLI `--emit-layout`; seeds from spine `PortGeom` | LAYOUT.md §9 |
-| Router collision complaints | from-document path works | LAYOUT.md §10 |
+| `--emit-layout` seed helper | **done** (keep name; wire to `ascw`) | LAYOUT.md §9 |
+| Optional authored `w`/`h` / padding override | after modules-only sizes stably | rfc/004, LAYOUT.md |
 | Multi-page / folded buses | V1 stable | rfc/000 later themes |
 | Validation beyond drawing (strict mode) | Separate checker design | rfc/000 §F |
 
@@ -125,5 +135,6 @@ not guaranteed art-director output — especially off-spine stacks.
 | [rfc/001](rfc/001-layout-sidecar-and-hitl.md) | History | Layout sidecar + HITL options and decision |
 | [rfc/002](rfc/002-table01-rendering.md) | History | Table01 algorithmic rationale |
 | [rfc/003](rfc/003-docs-topology-and-rfc-process.md) | History | Documentation topology + RFC process |
-| [examples/layout02.yaml](../examples/layout02.yaml) | Sketch | Layout schema example (unwired) |
+| [rfc/004](rfc/004-hitl-place-loop-and-modules-only.md) | History | HITL place loop, modules-only, route deferred |
+| [examples/layout02.yaml](../examples/layout02.yaml) | Sketch | Place / layout schema example |
 | [skill/SKILL.md](../skill/SKILL.md) | Draft | pi skill workflow |
