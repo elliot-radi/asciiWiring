@@ -1,27 +1,20 @@
-# layout02.yaml — DRAFT schema sketch for table02 (nested / face-banked)
+# layout02.yaml — layout sidecar for table02 (nested / face-banked)
 #
-# STATUS: not loaded by the CLI or library. Bootstrap spine-v1 ignores this
-# file. Authoring shape only — see docs/HITL.md; future docs/LAYOUT.md.
+# STATUS: loaded by CLI `--layout examples/layout02.yaml` (`from-document`).
+# Validated by `src/layout/loader.js`; applied via spine-first geometry
+# overlay in `src/layout/from-document.js` (course correction: no parallel router).
 #
-# Tentative contract (not implemented):
+# This copy mirrors current spine-v1 box origins + face banks for table02 so
+# `--layout` can round-trip near spine quality. Hand-edit x/y to tune;
+# see docs/LAYOUT.md.
 #
 #   components.<Name> — glyph dossier (key = table column name)
 #     x, y   — top-left grid cell of the module box border (integers)
-#     sides  — pin banks by face; NO separate pinOrder
-#       keys:   always N, E, S, W (include empty faces so HITL can drop pins in)
-#       values: ordered lists of named pins ( [] if none on that face yet )
-#       order:  N, S → left → right
-#               E, W → top  → bottom
-#
-#   Pin census (hard):
-#     - Bootstrap / pre-edit emit lists every named pin from the table (SoT)
-#       exactly once across the four faces (tool chooses initial banking).
-#     - Hand-edit may move pins between faces and reorder within a face.
-#     - Dropping, renaming, or duplicating a pin vs the table → error.
-#     - Extra pin names not on the component → error.
+#     sides  — pin banks by face; list order = edge order
+#       keys:   always N, E, S, W
+#       order:  N, S → left → right; E, W → top → bottom
 #
 #   Table remains electrical SoT. No wires or authored w/h here.
-#   x/y and banks below are art02-ish illustration, not golden metrics.
 
 components:
   ESP32-C3:
@@ -43,7 +36,7 @@ components:
       W: [VDD, GND, SDA, SCL, ADDR]
 
   RELAY:
-    x: 1
+    x: 12
     y: 14
     sides:
       N: [IN]
@@ -52,7 +45,7 @@ components:
       W: []
 
   ZMCT103C:
-    x: 24
+    x: 38
     y: 17
     sides:
       N: [OUT]

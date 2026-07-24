@@ -9,11 +9,12 @@ const path = require('path');
 const { render, debugStages } = require('./index');
 
 function usage(code = 1) {
-  const msg = `Usage: node src/render.js [--debug] [file.md]
+  const msg = `Usage: node src/render.js [--debug] [--layout <file.yaml>] [file.md]
 
   Reads a Markdown wiring table and prints ASCII art.
   With no file, reads stdin.
-  --debug  print stage summaries as JSON on stderr; art still on stdout
+  --debug     print stage summaries as JSON on stderr; art still on stdout
+  --layout    load layout sidecar YAML (policy: from-document)
 `;
   process.stderr.write(msg);
   process.exit(code);
@@ -21,11 +22,19 @@ function usage(code = 1) {
 
 function main(argv) {
   let debug = false;
+  let layoutFile = null;
   const files = [];
-  for (const a of argv) {
+  for (let i = 0; i < argv.length; i++) {
+    const a = argv[i];
     if (a === '--help' || a === '-h') usage(0);
     else if (a === '--debug') debug = true;
-    else if (a.startsWith('-')) {
+    else if (a === '--layout') {
+      layoutFile = argv[++i];
+      if (!layoutFile) {
+        process.stderr.write('Missing argument for --layout\n');
+        usage(1);
+      }
+    } else if (a.startsWith('-')) {
       process.stderr.write(`Unknown flag: ${a}\n`);
       usage(1);
     } else files.push(a);
@@ -40,9 +49,15 @@ function main(argv) {
     text = fs.readFileSync(0, 'utf8');
   }
 
+  const options = {};
+  if (layoutFile) {
+    const layoutYaml = fs.readFileSync(path.resolve(layoutFile), 'utf8');
+    options.layout = { policy: 'from-document', layoutDocument: layoutYaml };
+  }
+
   try {
     if (debug) {
-      const stages = debugStages(text);
+      const stages = debugStages(text, options);
       const summary = {
         components: stages.netlist.components.map((c) => ({
           name: c.name,
@@ -70,7 +85,7 @@ function main(argv) {
       process.stderr.write(JSON.stringify(summary, null, 2) + '\n');
       process.stdout.write(stages.art);
     } else {
-      process.stdout.write(render(text));
+      process.stdout.write(render(text, options));
     }
   } catch (err) {
     process.stderr.write(`error: ${err.message}\n`);

@@ -1,9 +1,10 @@
 # Architecture
 
 **Status:** draft — guides the **tool** implementation.  
-**Companions:** [SPEC.md](SPEC.md), [HITL.md](HITL.md),
-[GLYPHS.md](GLYPHS.md), [STATUS.md](STATUS.md), [ROADMAP.md](ROADMAP.md),
-[LAYOUT.md](LAYOUT.md)
+**Companions:** [SPEC.md](SPEC.md), [GLYPHS.md](GLYPHS.md),
+[STATUS.md](STATUS.md), [LAYOUT.md](LAYOUT.md),
+[rfc/000-electrical-model-and-pipeline.md](rfc/000-electrical-model-and-pipeline.md),
+[rfc/001-layout-sidecar-and-hitl.md](rfc/001-layout-sidecar-and-hitl.md)
 
 Product: Node library + CLI. Optional pi skill only drafts tables and invokes
 the tool (`skill/SKILL.md`) — it is not the placer.
@@ -14,7 +15,7 @@ the tool (`skill/SKILL.md`) — it is not the placer.
 
 We convert a **connectivity matrix** into monospaced **wiring art**, with
 geometry increasingly split between bootstrap auto-place and human-owned
-layout documents ([HITL.md](HITL.md)).
+layout documents ([rfc/001](rfc/001-layout-sidecar-and-hitl.md)).
 
 Same *pattern* as Mermaid (text → diagram), different *domain*:
 
@@ -161,10 +162,10 @@ Layout reads roles; paint does not need them.
 ```
 LayoutOptions {
   policy: "spine-v1" | "from-document"  // bootstrap vs HITL sidecar
-  layoutDocument?: object               // nested components map; see HITL +
-                                        // examples/layout02.yaml sketch
-                                        // (x, y, sides face-banks; later:
-                                        //  orientation, group, edge)
+  layoutDocument?: object               // Loader validates YAML → nested
+                                        // components map; see LAYOUT.md for
+                                        // schema (x, y, sides; later:
+                                        //  orientation, group, edge).
   // channel spacing, page width, fold buses, …
 }
 
@@ -191,13 +192,21 @@ Segment  { x1,y1,x2,y2 }    // axis-aligned
 
 Coordinates are **integer character cells**.
 
-**Layout document (draft, unwired):** map `components.<tableName>` → glyph
-dossier `{ x, y, sides: { N, E, S, W: pin[] } }`. Face list order is edge order
+**Layout document:** map `components.<tableName>` → glyph dossier
+`{ x, y, sides: { N, E, S, W: pin[] } }`. Face list order is edge order
 (N/S left→right, E/W top→bottom). Pin multiset must match the netlist named
-ports. Nested dossiers preferred over separate top-level pinOrder/sides maps.
-Do not implement as optional overrides inside `spine-v1` place heuristics;
-`policy: from-document` builds port sites from the dossier then routes.
-Schema sketch: [examples/layout02.yaml](../examples/layout02.yaml); HITL.md.
+ports. Schema contract: [LAYOUT.md](LAYOUT.md); example
+[examples/layout02.yaml](../examples/layout02.yaml); HITL history rfc/001.
+
+**Policy `from-document` (implemented, spine-first):** loader validates the
+YAML against the netlist (census/schema). Place+route still run as
+**`spine-v1`** so bootstrap quality is preserved. The dossier then
+**rigid-applies** each component's authored `x`/`y` (ports and wire ends that
+sat on those port cells move with the box). When YAML origins match spine
+placement, art is **identical** to the default CLI (selftest identity bar).
+This is **not** a second placer/router and **not** hybrid overrides inside
+spine heuristics. Large automatic `x`/`y` deltas without a re-route pass are
+lossy — see §3.4.2.
 
 ### 3.4.1 Glyph build (target seam)
 
@@ -216,6 +225,8 @@ It builds boxes while placing and assigns faces internally.
 
 #### Policy `spine-v1` (bootstrap placer — implemented)
 
+High-level behaviour (product intent):
+
 1. Place **bus** boxes left→right (respect column order when possible).
 2. Choose a **channel stack** for nets used on the backbone (reorder allowed).
 3. Map named bus ports onto east/west faces aligned to channels when adjacent buses share nets.
@@ -230,8 +241,127 @@ It builds boxes while placing and assigns faces internally.
 
 `spine-v1` is deliberately limited. It is a **bootstrap**, not the quality
 ceiling (see table02). Harder packing → layout document + human edit
-([HITL.md](HITL.md)), not endless new spine heuristics. Optional future auto
+(rfc/001), not endless new spine heuristics. Optional future auto
 policies (`multi-row`, `paged`) must not block the sidecar path.
+
+**Implementation order matters.** Spine does **not** “size all boxes → drop
+them on a loose grid → globally route.” Place and route are **fused and
+constructive**. Precise pipeline: §3.4.2.
+
+### 3.4.2 Mental model: constructive place+route (why large `x`/`y` moves hurt)
+
+Two different pictures of “ASCII wiring layout” is easy to mix. Maintain the
+**engine** model, not only the **ideal CAD** model.
+
+#### Ideal picture (not how spine-v1 works)
+
+A floorplan-then-route pipeline many engineers expect:
+
+1. Size every module box from pin banks / labels.
+2. Place **buses** on a top row with large gutters.
+3. Place **secondaries** on a lower row with exterior clearance around pins.
+4. **Then** run an ortho router through free space (stems, rails, stubs).
+
+In that world, changing a box’s `x`/`y` is cheap: geometry moves, then
+**routing is recomputed** against the new open channels. Large YAML bumps
+should still look intentional.
+
+#### Actual spine-v1 picture (code: `src/layout/spine-v1.js`)
+
+Spine is a **role-aware constructive placer**. Corridors and wires are chosen
+while modules appear, not over a finished packing.
+
+Approximate order:
+
+| Step | What happens | Consequence for geometry |
+|------|----------------|---------------------------|
+| 1 | Roles already classified (`bus` / `branch` / `passive`). | Secondaries are not a generic “row 2.” |
+| 2 | **`assignNetRows`** — shared `netY` map for backbone-ish nets (shared bus nets first with scoring, then exclusive nets per bus). | Horizontal “spine” channels exist **before** bus boxes finish. |
+| 3 | **Size/place buses only** at `y = 0`, left→right (`GAP_BUSES`). Width from title/pin labels; height from **`max(netY)+2`**, i.e. the channel stack, not face list length alone. | Bus ports get absolute `(x,y)` tied to channels. |
+| 4 | Instantly place bus **port sites** (E/W by facing rule + `netY`). | Port coordinates are world truth for rails. |
+| 5 | **Bus–bus H wires** for same net + same `y` between consecutive buses. | Backbone rails are segment lists, not a later pass. |
+| 6 | For each **branch** (host-attached): find stem net on a host bus → read host port site → stoop out `STEM_RUN` to column `stemX` → drop stem → optional passive tee → **only then** size/place branch box under that host (`hostBottom` stacks siblings) → attach N/E/S ports and leaf stubs/labels. | Branch `x` is stem-centred / collision-nudged; `y` is under host’s current bottom — **not** a global second laundry line of all non-buses. |
+| 7 | **Dangling stubs** for single-owner nets that never got a wire. | Leaf labels share cells with stub ends. |
+| 8 | Page bounds; paint is pure raster + join/hop (no re-place). | |
+
+So “spacing” is **emergent** from gap constants, channel rows, stem run,
+and host bottoms — not a free orthogonal packing of all boxes first.
+
+Sketch of the **structural** result (not glyph-perfect):
+
+```
+  [ BUS A ]──── netY channels (H rails) ────[ BUS B ]
+      │ stemX (STEM_RUN out of host port)
+      │
+      ├──── tee ── [ passive ]     ← only on some fixtures (table01)
+      │
+   [ BRANCH ]   ← under THIS host’s stack, not global row of all secondaries
+```
+
+Side-by-side:
+
+| Expectation | Ideal CAD picture | spine-v1 |
+|-------------|-------------------|----------|
+| Second tier of modules | One global `y` below buses | Per-**host** stacks + stem-driven `x` |
+| Clear space before wires | Yes | Wires and Knuth box placement interleave |
+| Bus height | Mostly pin count / faces | Driven by **channel `netY`** |
+| Branch attachment | Route after both boxes exist | Stem from **existing** bus `PortGeom` to child placed **after** stem column exists |
+| Backbone alignment | Free corridor between rows | Shared **`netY`** through bus ports |
+
+#### What `from-document` does today (course correction)
+
+Do **not** re-run a second router. Flow:
+
+```
+netlist ──► spine-v1 (full constructive place+route)
+                 │
+                 ▼
+         layout YAML (validated census)
+                 │
+                 ▼
+         rigid-apply dossier x/y deltas
+         (box + that component’s ports + segment
+          ends that sat on those port cells + some labels)
+                 │
+                 ▼
+              paint
+```
+
+- **Identity:** dossier `x`/`y` equal spine box origins → ASCII matches default CLI
+  (`examples/layout02.yaml` is kept aligned for table02; selftest locks identity).
+- **Small bumps:** endpoints and short stubs often still look fine; geometry is continuous enough.
+- **Large bumps:** segments that are **not** “owned” solely as a port endpoint—
+  stem elbows at `stemX`, long vertical drops, H runs planned for old gutters—
+  **stay where spine put them** or only partially follow. Wires then stretch,
+  cross odd space, or detach visually. That is not paint failing; the wire
+  graph was **planned jointly with the old packing** and never recomputed.
+
+Why elbows matter: a branch stem is typically more than a straight line
+between two port cells. Spine stores multi-segment paths (out from bus port →
+vertical at `stemX` → maybe jog into the child N pin). Moving only the
+child box updates the N-port cell and any segment vertices that **coincided**
+with that cell; the intermediate column often **does not move**. Same idea for
+bus–bus rails vs a bus slid far away: rail cells were never a function of the
+new origin alone.
+
+#### Target seam (keep the ideal in mind, don’t fake it)
+
+Longer-term HITL path that matches the ideal picture without throwing away spine:
+
+1. **Glyph size** from faces/labels (and later orientation/group).
+2. **Place** from layout dossier (or emit defaults with honest gutters).
+3. **Route** from fixed port sites with a shared ortho/stem policy (still may
+   reuse spine’s channel scoring as a *router input*, not a second brain that
+   re-places boxes).
+4. Paint unchanged.
+
+Until (3) is a real stage boundary, treat large authoring moves as
+**“change geometry + expect a re-route”**, not “translate a finished schematic.”
+Bootstrap emits (`--emit-layout`, planned) should dump spine origins/faces so
+HITL **starts** from a packing the router already believed.
+
+Cross-refs: [LAYOUT.md](LAYOUT.md) (sidecar contract + checklist),
+[STATUS.md](STATUS.md) (what is wired), §6 (layout philosophy / hops).
 
 ### 3.5 Paint
 
@@ -271,17 +401,19 @@ Current / target shape (names indicative; split glyph/place/route next):
 
 ```
 src/
-  render.js           # CLI entry: read → pipeline → stdout
-  parse.js            # Markdown table + footnotes (+ future fm)
-  model.js            # Ast → Netlist + validate
-  classify.js         # roles
+  render.js              # CLI: [--debug] [--layout file.yaml] file.md
+  parse.js               # Markdown table + footnotes
+  model.js               # Ast → Netlist
+  classify.js            # roles
   layout/
-    spine-v1.js       # bootstrap placer (+ fused route today)
-    index.js          # pick policy
+    spine-v1.js          # bootstrap constructive place+route (§3.4.2)
+    loader.js            # layout YAML validate vs netlist (census)
+    from-document.js     # spine-first + rigid x/y apply
   paint/
-    grid.js           # sparse/dense char buffer helpers
-    classic.js        # glyph profile + rasterize
-  index.js            # library API: render(markdown, options) → string
+    grid.js
+    classic.js
+  index.js               # render(markdown, options) / debugStages
+  selftest.js
 ```
 
 v1 may live in fewer files if clearer; **stage boundaries** matter more
@@ -362,6 +494,10 @@ derivation is classify/layout adjacent; glyphs stay in paint.
 ---
 
 ## 6. Layout philosophy (`spine-v1` bootstrap)
+
+For **code order of operations** and why large layout-doc moves interact badly
+with existing segments, read §3.4.2 first. This section is the geometric
+ideology that constructive spine tries to approximate.
 
 Think **channel routing on a character grid**, not force-directed graphs.
 
@@ -460,8 +596,7 @@ Install under `~/.pi/agent/skills/` only after the tool + layout loop is pleasan
 Pipeline modules exist under `src/` (parse, model, classify, layout/spine-v1,
 paint). Place and route are still largely fused in `spine-v1.js`.
 
-**Next structural work:** layout document load + route-from-layout + keep spine
-as bootstrap default ([ROADMAP.md](ROADMAP.md) Phase 3, [HITL.md](HITL.md)).
+**Next structural work:** `--emit-layout` (dump spine `PortGeom` + box x/y into YAML for HITL). Optional: better non-identity rigid moves after large dossier deltas. Keep spine as bootstrap default. `from-document` is spine-first overlay (identity bar in selftest). See LAYOUT.md §10.
 
 ---
 
@@ -471,7 +606,7 @@ When a change is proposed, ask:
 
 1. Does it alter electrical meaning, or only presentation/placement?
 2. Can it live in IR / place / route / paint / layout-doc without new table syntax?
-3. Is this a human-in-the-loop concern better solved by a layout sidecar ([HITL.md](HITL.md))?
+3. Is this a human-in-the-loop concern better solved by a layout sidecar (rfc/001)?
 4. Is there a fixture that will lock the behaviour?
 5. Does it still work if we add a second paint target tomorrow?
 6. Are we inventing general CAD, or covering the wiring-block genre?

@@ -2,33 +2,35 @@
 
 **Signal-first Markdown wiring tables → ASCII module diagrams.**
 
-This repository is a **tool** (Node library + CLI). An optional **pi skill** (`skill/SKILL.md`) can teach an LLM how to draft tables and invoke the tool. 
-
-This tool (the 'bootstrap renderer') is intended to help in the production of ascii art for inclusion in markdown documents  portraying the wiring between modules and components in small-ish electronics projects, e.g. an ESP32-based antenna tester involving an ESP32-C3 superMini dev module, an OLED display, and a button. 
+This repository is a **tool** (Node library + CLI). An optional **pi skill**
+(`skill/SKILL.md`) can teach an LLM how to draft tables and invoke the tool.
 
 ## Approach
+
 Electrical connectivity lives in a human-readable **Markdown table** (the
 source of truth, SoT). Geometry today is a heuristic bootstrap (`spine-v1`).
 Direction of travel: computers draw boxes and route wires; humans own hard
-placement via a **nested layout sidecar** (schema sketch
-[`examples/layout02.yaml`](examples/layout02.yaml), not loaded by the CLI yet)
-and maybe a browser editor later. See [docs/HITL.md](docs/HITL.md) and
-[docs/STATUS.md](docs/STATUS.md).
+placement via a **layout sidecar**
+([`examples/layout02.yaml`](examples/layout02.yaml); CLI `--layout <file.yaml>`).
+Spine place/route first; YAML owns box `x`/`y` for HITL. See
+[`docs/STATUS.md`](docs/STATUS.md) and [`docs/README.md`](docs/README.md).
 
 ```
 User intent →
   → Markdown wiring table     ← electrical SoT (iterate here)
-  → tool: parse → IR* → place (with human assistance if needed)  
+  → tool: parse → IR* → place (with human assistance if needed)
   → route → paint
   → ASCII art for HARDWARE.md / READMEs / labs
 ```
 
-\*IR=intermediate representation (of electrical modules/components)
+\*IR = intermediate representation (of electrical modules/components)
 
-Inspired in spirit by [Mermaid](https://mermaid.js.org/): structure in text, mechanics in code. Domain model is electrical - **nets are hyperedges**, components have **ports.** These are not flowchart graphs.
+Inspired in spirit by [Mermaid](https://mermaid.js.org/): structure in text,
+mechanics in code. Domain model is electrical — **nets are hyperedges**,
+components have **ports.** These are not flowchart graphs.
 
-> **Status:** Bootstrap renderer works on two fixtures (`table01`, `table02`). 
-> Do not expect arbitrary tables to yield production art without placement 
+> **Status:** Bootstrap renderer works on two fixtures (`table01`, `table02`).
+> Do not expect arbitrary tables to yield production art without placement
 > help. MIT-licensed.
 
 ## Why this exists
@@ -39,7 +41,7 @@ Inspired in spirit by [Mermaid](https://mermaid.js.org/): structure in text, mec
 | Wiring docs go stale | Table is the doc; art is generated |
 | Pin tables alone don’t show topology | Art shows modules, buses, branches |
 | Full EDA is overkill for module block diagrams | Lightweight ASCII for firmware/docs |
-| Pure auto-layout hits a wall quickly | Human-in-the-loop layout dossier (planned; sketch in repo) |
+| Pure auto-layout hits a wall quickly | Human-in-the-loop layout dossier (`--layout`) |
 
 ## Quick example
 
@@ -82,9 +84,7 @@ node src/selftest.js
             └─────●────┘
                   │
                  GND
-
 ```
-
 
 Hand targets: `examples/art01.md`, `examples/art02.md`.  
 Generator snapshots: `examples/golden01.md`, `examples/golden02.md`.
@@ -95,13 +95,18 @@ Generator snapshots: `examples/golden01.md`, `examples/golden02.md`.
 asciiWiring/
 ├── README.md LICENSE package.json AGENTS.md
 ├── docs/
-│   ├── STATUS.md HITL.md GLYPHS.md SPEC.md ARCHITECTURE.md
-│   ├── ROADMAP.md TODO.md table01-walkthrough.md
+│   ├── README.md           # documentation topology manifest
+│   ├── STATUS.md           # current state and priorities
+│   ├── SPEC.md             # table language contract
+│   ├── ARCHITECTURE.md     # pipeline seams
+│   ├── LAYOUT.md           # layout sidecar schema
+│   ├── GLYPHS.md           # drawing conventions
+│   └── rfc/                # design decision log (append-only)
 ├── skill/SKILL.md          # draft pi skill (thin)
 ├── src/                    # the tool
 │   ├── render.js index.js selftest.js
 │   ├── parse.js model.js classify.js
-│   ├── layout/spine-v1.js  # bootstrap place only
+│   ├── layout/             # spine-v1, loader, from-document
 │   └── paint/
 └── examples/
     ├── table01 art01 golden01
@@ -109,19 +114,12 @@ asciiWiring/
     └── esp32-oled-button.md
 ```
 
-## Documentation map
+## Documentation
 
-| Doc | Read it for |
-|-----|-------------|
-| [docs/STATUS.md](docs/STATUS.md) | Where we are: tool vs skill |
-| [docs/HITL.md](docs/HITL.md) | Human-in-the-loop (HITL): who places vs draws |
-| [docs/GLYPHS.md](docs/GLYPHS.md) | Component drawing, grouping, and orientation direction |
-| [docs/SPEC.md](docs/SPEC.md) | Table language (normative) |
-| [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) | Pipeline seams |
-| [docs/ROADMAP.md](docs/ROADMAP.md) | Phases |
-| [docs/TODO.md](docs/TODO.md) | Deferred language and implementation details (TBs, NTC groups, …) |
-| [AGENTS.md](AGENTS.md) | Contributor / agent norms |
-| [skill/SKILL.md](skill/SKILL.md) | LLM table-workflow draft |
+For the full document topology, current status, and normative contracts,
+see [`docs/README.md`](docs/README.md).
+
+For contributor norms and agent rules, see [`AGENTS.md`](AGENTS.md).
 
 ## Running
 
@@ -134,15 +132,16 @@ node src/render.js --debug examples/table02.md   # IR summary on stderr
 npm test                                         # → node src/selftest.js
 ```
 
-Requires Node ≥ 18 (no npm dependencies today).
+Requires Node ≥ 18. Runtime dependency: `js-yaml` (layout sidecar).
 
 ## Design pillars
 
 1. **Table is the electrical interface.** No coordinates in the matrix.
 2. **Tool ≠ skill.** Library/CLI is the product; skill is optional UX for LLMs.
 3. **Deterministic paint** given a netlist + layout.
-4. **Domain genre:** module wiring / block diagrams - not full EDA.
-5. **Human-in-the-loop placement** when auto bootstrap isn’t enough ([HITL.md](docs/HITL.md)).
+4. **Domain genre:** module wiring / block diagrams — not full EDA.
+5. **Human-in-the-loop placement** when auto bootstrap isn’t enough. See
+   [rfc/001](docs/rfc/001-layout-sidecar-and-hitl.md).
 6. **Docs-native:** Markdown in, ASCII out, diff-friendly.
 
 ## Out of scope
@@ -158,6 +157,7 @@ Requires Node ≥ 18 (no npm dependencies today).
 - Add `examples/tableNN` (+ art/golden) for regressions.
 - Geometric ambiguity: discuss or write a short note before large rewrites.
 - Don’t install into `~/.pi/agent/skills/` until the tool loop is boring.
+- Don’t create new `docs/` files without updating `docs/README.md`.
 
 ## License
 

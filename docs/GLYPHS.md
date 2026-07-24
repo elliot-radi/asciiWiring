@@ -1,11 +1,12 @@
 # Glyphs: component drawing conventions
 
-**Status:** design discussion (2026-07). Extends [HITL.md](./HITL.md);
-normative table-language changes belong in [SPEC.md](./SPEC.md), not here;
-layout sidecar schema is normative in [LAYOUT.md](./LAYOUT.md).
+**Status:** normative contract for drawing conventions. Extends
+[rfc/001-layout-sidecar-and-hitl.md](rfc/001-layout-sidecar-and-hitl.md)
+and [LAYOUT.md](LAYOUT.md); normative table-language changes belong in
+[SPEC.md](SPEC.md).
 
 This doc is the home for *how a component becomes a glyph* — box shape, labeling,
-and composition — as distinct from *where the glyph goes* (HITL.md) or *what's
+and composition — as distinct from *where the glyph goes* (rfc/001) or *what's
 legal in the wiring table* (SPEC.md).
 
 ## Glyph kinds
@@ -65,6 +66,10 @@ Rendered example:
     │
 ```
 
+**Gap:** Passive refdes-in-box rendering and side-table parsing are not yet
+implemented. The prefix conventions and side-table format above are design
+conventions only; parser and render support does not exist.
+
 ## Groups (composite glyphs)
 
 For repeated sub-circuits (e.g. an NTC + divider resistor + 2 terminal
@@ -78,6 +83,10 @@ the *layout* stage to treat a tagged cluster as one rigid glyph: solve the
 internal geometry once, cache it, redraw the cached fragment for every
 instance. The electrical source of truth is untouched — this is purely a
 placement-stage optimization.
+
+**Gap:** Layout-only grouping (`group:` tag recognition in the layout stage) is
+not yet implemented. Internal geometry caching and rigid-glyph redraw are
+design conventions only.
 
 **Phase 2 (deferred) — authoring-time templates.**
 A real template/instance system (declare `NTC_DIVIDER` once with a named
@@ -97,6 +106,9 @@ mechanism rather than introducing new machinery:
    row, the same way shared-bus peers (e.g. I2C `SDA`/`SCL`) channel-align
    today — just applied to a perimeter instead of an internal bus.
 
+**Gap:** Boundary preference/alignment (`edge:` tag) is not yet implemented.
+The baseline-alignment pass is a design convention only.
+
 ## Rotation / orientation
 
 Deliberately **not** spec'd yet — deferred until the passive convention
@@ -105,7 +117,7 @@ above has been used in practice, per the 2026-07 discussion.
 Two distinct concepts, kept separate rather than unified into one generic
 "rotate" feature:
 - **Modules/groups:** layout face banks (`sides` N/E/S/W pin lists). Draft
-  shape: [examples/layout02.yaml](../examples/layout02.yaml) / [HITL.md](HITL.md).
+  shape: [examples/layout02.yaml](../examples/layout02.yaml) / [rfc/001](rfc/001-layout-sidecar-and-hitl.md).
   Bootstrap `spine-v1` does **not** read layout files and does not honor author
   face banks (faces are assigned internally). From-document place owns that.
 - **Passives:** binary `orientation: h | v`, not four face banks — a
@@ -114,6 +126,6 @@ Two distinct concepts, kept separate rather than unified into one generic
 ## Open questions carried forward
 
 - Route-on-drop vs. live-reroute during drag — deferred to whenever the
-  browser GUI (Option E in HITL.md) is actually built.
+  browser GUI (Option E in rfc/001) is actually built.
 - Whether passives ever use micro face banks vs orientation only — after
   real passive fixtures.

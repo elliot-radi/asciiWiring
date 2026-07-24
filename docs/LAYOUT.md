@@ -1,9 +1,10 @@
 # Layout document — schema contract
 
 **Status:** draft, normative for the **layout sidecar** YAML.  
-**Companions:** [SPEC.md](SPEC.md) (table language), [HITL.md](HITL.md)
+**Companions:** [SPEC.md](SPEC.md) (table language),
+[rfc/001-layout-sidecar-and-hitl.md](rfc/001-layout-sidecar-and-hitl.md)
 (human-in-the-loop), [ARCHITECTURE.md](ARCHITECTURE.md) (pipeline seams),
-[GLYPHS.md](GLYPHS.md) (drawing conventions), [ROADMAP.md](ROADMAP.md).
+[GLYPHS.md](GLYPHS.md) (drawing conventions).
 
 Schema sketch: [`examples/layout02.yaml`](../examples/layout02.yaml) — **not
 loaded by the CLI or library yet**. This file freezes the shape before any
@@ -35,10 +36,12 @@ table. There is no sparse/fallback mode.
 
 Rationale: a sparse file would force two placement engines (bootstrap +
 from-document) to cooperate, which is exactly the hybrid-overlay fragility
-that was prototyped and reverted (see [HITL.md](HITL.md) decision log).
+that was prototyped and reverted (see
+[rfc/001](rfc/001-layout-sidecar-and-hitl.md) decision log).
 Mode B keeps `--layout` a single pure place→route path with one mental model.
-Authoring full files is cheap once a bootstrap-emit helper exists
-(§9), so "full" is not a usability tax.
+The bootstrap auto-place policy already makes sensible face-banking choices
+for many fixtures; the emitter preserves these decisions so HITL edits are
+tweaks, not rewrites.
 
 ---
 
@@ -51,9 +54,11 @@ The renderer has one place policy per invocation:
 | `spine-v1`      | default CLI (no `--layout` flag)       | netlist only                   |
 | `from-document` | CLI invoked with `--layout <file>`     | netlist **and** layout document|
 
-`from-document` does **not** call into `spine-v1` place heuristics. It builds
-glyph boxes and port sites from the dossier, then routes from port sites.
-Spine stays the default and is never asked to honor layout overrides.
+`from-document` **must not** reimplement place+route. Course correction:
+run **spine-v1** for place+route quality, then **rigid-apply** dossier `x`/`y`
+(and keep loader-enforced face census). When the YAML matches spine origins,
+ASCII is **identical** to the default CLI. Spine remains the bootstrap default;
+the sidecar overrides geometry, not routing intelligence.
 
 ---
 
@@ -99,7 +104,7 @@ Rules:
 | Connectivity       | wiring table ([SPEC.md](SPEC.md))                        |
 | Glyph drawing      | [GLYPHS.md](GLYPHS.md)                                   |
 | Place policy seams | [ARCHITECTURE.md](ARCHITECTURE.md) §3.4                  |
-| HITL workflow      | [HITL.md](HITL.md)                                       |
+| HITL workflow      | [rfc/001](rfc/001-layout-sidecar-and-hitl.md)            |
 | Box origin + faces | **this file**                                            |
 
 ---
@@ -199,17 +204,43 @@ When one of these is specced, it moves out of this list and into §3.
 Because Mode B requires a full dossier per component, hand-writing the first
 file is tedious. A future command (provisional: `render --emit-layout`) will
 dump a valid initial dossier from the netlist: every component, every named
-pin banked onto a tool-chosen default face (likely all-`E` or a
-top/bottom split mirroring today's spine), `x`/`y` seeded from a trivial
-grid. The human then moves boxes and re-banks pins; they never type pin names
-from scratch.
+pin banked onto the **same face the current auto-place policy (`spine-v1`)
+would choose**, `x`/`y` seeded from the *existing* automated layout. The
+tool inspects the `PortGeom` produced by the selected auto-place policy; it
+does not invent placement logic independently. The human then moves boxes and
+re-banks pins; they never type pin names from scratch.
 
 This is not built yet. Until it exists, `examples/layout02.yaml` is the
 hand-authored reference for `table02`.
 
 ---
 
-## 10. Open questions
+## 10. Implementation checklist
+
+These items track the `from-document` path from schema to working render.
+They belong here because each one changes the contract between the layout
+sidecar and the pipeline.
+
+- [x] Loader + validate layout YAML vs netlist (census, schema errors per §6)
+- [x] CLI flag `--layout <file>` reads YAML and forwards to `from-document` policy
+- [x] Build/apply geometry from layout (spine-first course correction; no parallel router)
+- [x] Route + paint via spine-v1; from-document rigid x/y overlay + loader census
+  (identity when YAML matches spine — locked in selftest)
+- [ ] **Bootstrap emit helper (`--emit-layout`)** — seed dossiers from spine-v1
+  `PortGeom` + box origins (table02 emission should match layout02). Blocked
+  only on CQ; from-document identity path already exists for round-trip tests.
+- [ ] Freeze `layout02` as golden emit+from-document pair; keep spine as default
+- [ ] Improve non-identity rigid moves (stem elbows / intermediate colums that
+  are not port cells may need a touch-up pass after large x/y deltas)
+- [ ] Add NTC-style fixture/layout to exercise repeated small components and
+  boundary placement
+- [ ] Record whether trial friction is schema ergonomics or edit/render feedback
+  latency (only after infra is pleasant)
+- [ ] Optional: router collision "complaints" for minimal human answers
+
+---
+
+## 11. Open questions
 
 - Whether passives ever need micro face banks vs `orientation: h|v` only —
   deferred until real passive fixtures ([GLYPHS.md](GLYPHS.md)).

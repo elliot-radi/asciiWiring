@@ -64,6 +64,67 @@ console.log('\ntable02 structural tests');
   check('render() stable', render(table2) === art);
 }
 
+console.log('\nlayout loader tests');
+{
+  const table2 = fs.readFileSync(path.join(root, 'examples/table02.md'), 'utf8');
+  const layout2 = fs.readFileSync(path.join(root, 'examples/layout02.yaml'), 'utf8');
+  const { parseDocument, buildNetlist, classify } = require('./index');
+  const { validateAndLoadLayout } = require('./layout/loader');
+  const netlist = classify(buildNetlist(parseDocument(table2)));
+
+  const layout = validateAndLoadLayout(layout2, netlist);
+  check('layout02 has 4 components', Object.keys(layout).length === 4);
+  check('layout02 ESP32-C3 has 6 pins',
+        layout['ESP32-C3'].sides.E.length === 6);
+  check('layout02 ADS1115 has 9 pins',
+        layout['ADS1115'].sides.E.length + layout['ADS1115'].sides.W.length === 9);
+
+  // Bad layout: missing component ZMCT103C
+  let bad = layout2.replace(/  ZMCT103C:.*/s, '');
+  try {
+    validateAndLoadLayout(bad, netlist);
+    check('missing component throws', false);
+  } catch (e) {
+    check('missing component throws', /layout: missing component ZMCT103C/.test(e.message));
+  }
+
+  // Bad layout: duplicate pin
+  bad = layout2.replace('E: [3V3, GND', 'E: [3V3, GND, GPIO8');
+  try {
+    validateAndLoadLayout(bad, netlist);
+    check('duplicate pin throws', false);
+  } catch (e) {
+    check('duplicate pin throws', /layout: ESP32-C3 duplicate pin GPIO8/.test(e.message));
+  }
+
+  // Bad layout: unknown pin
+  bad = layout2.replace('E: [3V3, GND', 'E: [FOOBAR, 3V3, GND');
+  try {
+    validateAndLoadLayout(bad, netlist);
+    check('unknown pin throws', false);
+  } catch (e) {
+    check('unknown pin throws', /layout: ESP32-C3 unknown pin FOOBAR/.test(e.message));
+  }
+}
+
+console.log('\nfrom-document policy tests');
+{
+  const table2 = fs.readFileSync(path.join(root, 'examples/table02.md'), 'utf8');
+  const layout2 = fs.readFileSync(path.join(root, 'examples/layout02.yaml'), 'utf8');
+  const spineArt = render(table2);
+  const art = render(table2, {
+    layout: { policy: 'from-document', layoutDocument: layout2 },
+  });
+  check('from-document identity vs spine when YAML matches spine', art === spineArt);
+  check('from-document art has ESP32-C3', art.includes('ESP32-C3'));
+  check('from-document art has ADS1115', art.includes('ADS1115'));
+  check('from-document art has RELAY', art.includes('RELAY'));
+  check('from-document art has ZMCT103C', art.includes('ZMCT103C'));
+  check('from-document has I2C backbone', art.includes('GPIO8') && art.includes('SDA'));
+  check('from-document has 3V3-VDD run', art.includes('3V3') && art.includes('VDD'));
+  check('from-document has branch IN pin', art.includes('IN'));
+}
+
 if (failed) {
   console.error(`\n${failed} failure(s)`);
   process.exit(1);

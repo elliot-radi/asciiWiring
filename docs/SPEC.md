@@ -1,17 +1,17 @@
 # Specification — wiring table language & v1 semantics
 
 **Status:** draft, normative for **electrical** table language.  
-**Companions:** [ARCHITECTURE.md](ARCHITECTURE.md), [HITL.md](HITL.md),
-[GLYPHS.md](GLYPHS.md), [STATUS.md](STATUS.md), [ROADMAP.md](ROADMAP.md),
-[LAYOUT.md](LAYOUT.md)
+**Companions:** [ARCHITECTURE.md](ARCHITECTURE.md), [GLYPHS.md](GLYPHS.md),
+[STATUS.md](STATUS.md), [LAYOUT.md](LAYOUT.md),
+[rfc/000-electrical-model-and-pipeline.md](rfc/000-electrical-model-and-pipeline.md),
+[rfc/001-layout-sidecar-and-hitl.md](rfc/001-layout-sidecar-and-hitl.md)
 
 This document defines the **author-facing electrical language** (the Markdown
 connectivity table) and the **meaning** a correct tool must preserve when
 drawing. It does **not** mandate character coordinates. Geometry lives outside
-the table (bootstrap `spine-v1` today; nested layout sidecar / HITL next — see
-[LAYOUT.md](LAYOUT.md) for the schema contract,
-[HITL.md](HITL.md) for workflow, and `examples/layout02.yaml` sketch; not
-CLI-loaded yet).
+the table (bootstrap `spine-v1` today; nested layout sidecar next — see
+[LAYOUT.md](LAYOUT.md) for the schema contract, rfc/001 for workflow, and
+`examples/layout02.yaml` sketch; not CLI-loaded yet).
 
 Art may vary so long as topology, labels, and diagram conventions are satisfied.
 
@@ -29,7 +29,7 @@ Art may vary so long as topology, labels, and diagram conventions are satisfied.
 ## 2. Non-goals (language)
 
 - Expressing pixel/column coordinates **in the connectivity table**
-  (a separate layout document may hold placement; see HITL.md).
+  (a separate layout document may hold placement; see rfc/001).
 - Full schematic symbols (op-amps, transistor guts, etc.).
 - Netlists for EDA import as a primary goal (export adapters are future).
 - Suspending electrical meaning in favour of arbitrary drawing commands.

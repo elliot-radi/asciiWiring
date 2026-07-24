@@ -27,5 +27,8 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/elliot-radi/asciiWiring.git"
+  },
+  "dependencies": {
+    "js-yaml": "^5.2.2"
   }
 }
