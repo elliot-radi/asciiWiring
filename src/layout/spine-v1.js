@@ -9,6 +9,7 @@ const {
   getComponent,
   getNet,
 } = require('../model');
+const { sizeChrome } = require('./chrome');
 
 const GAP_BUSES = 9;
 const STEM_RUN = 4;
@@ -365,19 +366,16 @@ function placeBranchModule(ctx) {
   });
 
   const title = branch.name;
-  const eastLabs = eastCandidates.map((p) => p.label || '');
-  const maxEast = Math.max(0, ...eastLabs.map((s) => s.length));
-  const stemLab = stemPort.label || '';
-  const innerW = Math.max(title.length + 4, maxEast + 5, stemLab.length + 4, 10);
-  const brW = innerW + 2;
-
-  // Module chrome: top, optional stem row, east pins, pad, title, bottom.
-  // Compact simple branch (BUTTON): stem●, label, title, south● — fewer blanks.
-  const nEast = eastCandidates.length;
-  const simple = nEast === 0;
-  const brH = simple
-    ? 1 + 1 + 1 + 1 // top, label/blank, title, bottom
-    : 1 + 1 + nEast + 1 + 1 + 1;
+  // Face banks for shared chrome (same contract as layout YAML dossier).
+  const sides = {
+    N: [stemPort.label || stemPort.id],
+    E: eastCandidates.map((p) => p.label || p.id),
+    S: southPort ? [southPort.label || southPort.id] : [],
+    W: [],
+  };
+  const chrome = sizeChrome(title, sides, 'branch');
+  const brW = chrome.w;
+  const brH = chrome.h;
 
   // Under this host only — different-host modules keep independent depths
   // so RELAY (MCU) and ZMCT (ADC) can sit side-by-side (art02).
@@ -428,13 +426,13 @@ function placeBranchModule(ctx) {
     w: brW,
     h: brH,
     title,
-    titleVAlign: 'bottom',
+    titleVAlign: chrome.titleVAlign || 'bottom',
   };
+  if (chrome.titleBottomInset) brBox.titleBottomInset = chrome.titleBottomInset;
   boxes.push(brBox);
 
-  // N/S face ports: face mid-column (RELAY already matched by chance; ZMCT
-  // title width left the ADS stem near W while OUT/GND followed stemX).
-  // Lateral offset elbows at teeY — never H-jog on the north border row.
+  // N/S face ports: face mid-column. Lateral offset elbows at teeY — never
+  // H-jog on the north border row.
   const faceMidX = brBox.x + Math.floor(brBox.w / 2);
   const stemDotX = clamp(faceMidX, brBox.x + 1, brBox.x + brBox.w - 2);
   portGeom.push({
@@ -444,6 +442,7 @@ function placeBranchModule(ctx) {
     side: 'N',
     marker: '●',
   });
+  // N/S interior pin names: paint.placePinLabels (not free-field labels).
   if (stemPort.label) portLabels[stemPort.id] = stemPort.label;
 
   if (stemDotX === stemX) {
@@ -461,19 +460,8 @@ function placeBranchModule(ctx) {
     });
   }
 
-  // Stem pin text just under north border (IN / OUT)
-  if (stemPort.label) {
-    const t = stemPort.label;
-    labels.push({
-      text: t,
-      x: brBox.x + Math.max(1, Math.floor((brW - t.length) / 2)),
-      y: brBox.y + 1,
-      kind: 'note',
-    });
-  }
-
-  // East pins start one row below stem-label row
-  let ey = brBox.y + 2;
+  // East pins from shared chrome.pinStart (matches from-document banks).
+  let ey = brBox.y + chrome.pinStart;
   for (const ep of eastCandidates) {
     const net = getNet(netlist, ep.netId);
     const px = brBox.x + brBox.w - 1;
@@ -487,9 +475,7 @@ function placeBranchModule(ctx) {
     if (ep.label) portLabels[ep.id] = ep.label;
 
     const owners = portsForNet(netlist, ep.netId).filter((q) => q.kind === 'named');
-    // Leaf stubs: exclusive net, or floating not shared as a rail across modules
-    // Shared °5V across RELAY+ZMCT: only stub if we want a free label at each
-    // module; art02 shows 5V at each module — allow multi-owner floating stubs.
+    // Leaf stubs: exclusive net, or floating (art02: °5V stub at each module).
     const stubLeaf = net.floating || owners.length === 1;
     if (stubLeaf) {
       const x2 = px + 2;
@@ -501,7 +487,7 @@ function placeBranchModule(ctx) {
         text: net.name,
         x: x2 + 1,
         y: ey,
-        kind: "net",
+        kind: 'net',
       });
     }
     ey++;

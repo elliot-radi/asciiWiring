@@ -26,12 +26,13 @@ and each cell is a pin name or connection marker.
 ### Columns
 
 ```
-| Signal     | ESP32-C3 | OLED | 10kΩ | BUTTON |
+| Signal     | ESP32-C3 | OLED | R1 | BUTTON |
 ```
 
 - First column: **Signal / net name**. Each row is one electrical node.
 - Remaining columns: **Component names**. These become box labels in the
-  diagram.
+  diagram. Passives: short **`TYPENUM`** (`R1`, `C2`); put value/tolerance
+  in footnotes, not the header.
 
 ### Rows
 
@@ -39,13 +40,13 @@ Each row is one net (electrical node). Every cell in the row is connected
 to the same node.
 
 ```
-| Signal     | ESP32-C3 | OLED | 10kΩ | BUTTON |
-|------------|----------|------|------|--------|
-| I2C DATA   | GPIO8    | SDA  |      |        |
-| I2C CLOCK  | GPIO9    | SCK  |      |        |
-| BUTTON     | GPIO5    |      | x    | (NO)   |
-| °3.3V      | 3V3      | VCC  | x    |        |
-| °GND       | GND      | GND  |      | GND    |
+| Signal     | ESP32-C3 | OLED | R1 | BUTTON |
+|------------|----------|------|----|--------|
+| I2C DATA   | GPIO8    | SDA  |    |        |
+| I2C CLOCK  | GPIO9    | SCK  |    |        |
+| BUTTON     | GPIO5    |      | x  | (NO)   |
+| °3.3V      | 3V3      | VCC  | x  |        |
+| °GND       | GND      | GND  |    | GND    |
 ```
 
 ### Cell Values
@@ -196,14 +197,14 @@ Wrong (looks like GND/3V3 short to the stem):
 ```
 
 Pullup (two nets + passive body) — preferred topology
-(BUTTON stem stays continuous; 10kΩ tees off toward 3.3V):
+(BUTTON stem stays continuous; `R1` tees off toward 3.3V):
 
 ```
   GPIO5  ●───┐
              │            3.3V
              │             │
              │          ┌──┴──┐
-             ├──────────┤ 10kΩ│
+             ├──────────┤ R1  │
              │          └─────┘
              │
         ┌────┴───┐
@@ -230,20 +231,21 @@ node src/render.js --debug wiring.md
 
 ## Example
 
-### Input (`esp32-oled-button.md`)
+### Input (`examples/table01.md` shape)
 
 ```
-| Signal     | ESP32-C3 | OLED | BUTTON | 10kΩ |
-|------------|----------|------|--------|------|
-| I2C DATA   | GPIO8    | SDA  |        |      |
-| I2C CLOCK  | GPIO9    | SCK  |        |      |
-| BUTTON     | GPIO5    |      | (NO)   |  x   |
-| °3.3V      | 3V3      | VCC  |        |  x   |
-| °GND       | GND      | GND  | GND    |      |
+| Signal     | ESP32-C3 | SSD1306 OLED | BUTTON | R1   |
+|------------|----------|--------------|--------|------|
+| I2C DATA   | GPIO8    | SDA          |        |      |
+| I2C CLOCK  | GPIO9    | SCK          |        |      |
+| BUTTON     | GPIO5    |              | (NO)   |  x   |
+| °3.3V      | 3V3      | VCC          |        |  x   |
+| °GND       | GND      | GND          | GND    |      |
 
 Abbreviations:
-  ESP32-C3 ≝ "ESP32-C3 SuperMini Zero rev1.41"
-  OLED     ≝ "0.96\" SSD1306 OLED module"
+  ESP32-C3     ≝ "ESP32-C3 SuperMini Zero rev1.41"
+  SSD1306 OLED ≝ "0.96\" SSD1306 OLED module"
+  R1           ≝ "10kΩ 1/8W 5%"
 ```
 
 ### Output
@@ -264,7 +266,7 @@ Illustrative (see `examples/art01.md` for the checked-in reference):
                       │            3.3V
                       │             │
                       │          ┌──┴──┐
-                      ├──────────┤ 10kΩ│
+                      ├──────────┤ R1  │
                       │          └─────┘
                       │
                  ┌────┴───┐

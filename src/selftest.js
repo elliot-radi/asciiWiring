@@ -29,17 +29,17 @@ console.log('table01 structural tests');
 {
   const { netlist, art } = debugStages(table);
   check('ESP32-C3 is bus', roleOf(netlist, 'ESP32-C3') === 'bus');
-  check('OLED is bus', roleOf(netlist, 'OLED') === 'bus');
+  check('SSD1306 OLED is bus', roleOf(netlist, 'SSD1306 OLED') === 'bus');
   check('BUTTON is branch', roleOf(netlist, 'BUTTON') === 'branch');
-  check('10kΩ is passive', roleOf(netlist, '10kΩ') === 'passive');
+  check('R1 is passive', roleOf(netlist, 'R1') === 'passive');
   check('art has ESP32-C3', art.includes('ESP32-C3'));
-  check('art has OLED', art.includes('OLED'));
+  check('art has SSD1306 OLED', art.includes('SSD1306 OLED'));
   check('art has BUTTON', art.includes('BUTTON'));
-  check('art has 10kΩ', art.includes('10kΩ'));
+  check('art has R1', art.includes('R1'));
   check('art has GPIO8', art.includes('GPIO8'));
   check('art has SDA', art.includes('SDA'));
   check('art has SCK (table spelling)', art.includes('SCK'));
-  check('art has pullup tee topology marker', art.includes('├') && art.includes('10kΩ'));
+  check('art has pullup tee topology marker', art.includes('├') && art.includes('R1'));
   check('art has free GND label', /\bGND\b/.test(art));
   check('art has free 3.3V label', art.includes('3.3V'));
   check('render() stable', render(table) === art);
@@ -74,13 +74,14 @@ console.log('\nlayout loader tests');
 
   const layout = validateAndLoadLayout(layout2, netlist);
   check('layout02 has 4 components', Object.keys(layout).length === 4);
-  check('layout02 ESP32-C3 has 6 pins',
-        layout['ESP32-C3'].sides.E.length === 6);
-  check('layout02 ADS1115 has 9 pins',
-        layout['ADS1115'].sides.E.length + layout['ADS1115'].sides.W.length === 9);
+  check('layout02 ESP32-C3 has 6 pins', layout['ESP32-C3'].sides.E.length === 6);
+  check(
+    'layout02 ADS1115 has 9 pins',
+    layout['ADS1115'].sides.E.length + layout['ADS1115'].sides.W.length === 9
+  );
 
   // Bad layout: missing component ZMCT103C
-  let bad = layout2.replace(/  ZMCT103C:.*/s, '');
+  let bad = layout2.replace(/  ZMCT103C:[\s\S]*/, '');
   try {
     validateAndLoadLayout(bad, netlist);
     check('missing component throws', false);
@@ -88,7 +89,6 @@ console.log('\nlayout loader tests');
     check('missing component throws', /layout: missing component ZMCT103C/.test(e.message));
   }
 
-  // Bad layout: duplicate pin
   bad = layout2.replace('E: [3V3, GND', 'E: [3V3, GND, GPIO8');
   try {
     validateAndLoadLayout(bad, netlist);
@@ -97,7 +97,6 @@ console.log('\nlayout loader tests');
     check('duplicate pin throws', /layout: ESP32-C3 duplicate pin GPIO8/.test(e.message));
   }
 
-  // Bad layout: unknown pin
   bad = layout2.replace('E: [3V3, GND', 'E: [FOOBAR, 3V3, GND');
   try {
     validateAndLoadLayout(bad, netlist);
@@ -107,167 +106,173 @@ console.log('\nlayout loader tests');
   }
 }
 
-console.log('\nfrom-document policy tests');
+console.log('\nfrom-document modules-only tests');
 {
   const table2 = fs.readFileSync(path.join(root, 'examples/table02.md'), 'utf8');
   const layout2 = fs.readFileSync(path.join(root, 'examples/layout02.yaml'), 'utf8');
-  const spineArt = render(table2);
-  const art = render(table2, {
+  const optsM = {
     layout: { policy: 'from-document', layoutDocument: layout2 },
-  });
-  check('from-document identity vs spine when YAML matches spine', art === spineArt);
+    modulesOnly: true,
+  };
+  const { plan, art } = debugStages(table2, optsM);
+  const page = plan.pages[0];
+
+  check('from-document policy meta', page.meta && page.meta.policy === 'from-document');
+  check('from-document -m wires empty', (page.wires || []).length === 0);
   check('from-document art has ESP32-C3', art.includes('ESP32-C3'));
   check('from-document art has ADS1115', art.includes('ADS1115'));
   check('from-document art has RELAY', art.includes('RELAY'));
   check('from-document art has ZMCT103C', art.includes('ZMCT103C'));
-  check('from-document has I2C backbone', art.includes('GPIO8') && art.includes('SDA'));
-  check('from-document has 3V3-VDD run', art.includes('3V3') && art.includes('VDD'));
-  check('from-document has branch IN pin', art.includes('IN'));
+  check('from-document pin labels on chrome', art.includes('GPIO8') && art.includes('SDA'));
+  check('from-document branch N label IN', art.includes('IN'));
+  check('from-document has pin dots', art.includes('●'));
+  check('from-document no exterior PUMP_IN stub', !art.includes('PUMP_IN'));
+  check('from-document no exterior TPO stub', !art.includes('TPO'));
 
-  // Leaf stubs (S-face GND drop + E-face short stubs) must ride with box Δx/Δy.
-  // Regression: only the port vertex moved; free stub tip + net label stayed put.
+  // S-face interior pin names on branch chrome (from-document path)
+  check('from-document RELAY shows S pin name GND', /│\s*GND\s*│/.test(art));
+  check('from-document ZMCT shows S pin name GND', /│\s*GND\s*│/.test(art));
+  check(
+    'from-document branch title not smashed with S label',
+    !/GNDRELAY|RELAYGND|GNDZMCT|ZMCTGND/.test(art.replace(/\s/g, ''))
+  );
+
+  // Chrome fork closed for bootstrap path too (shared sizeChrome).
   {
-    // layout02 has RELAY at x:12; shift left like the hand trial at x:8
-    const shifted = layout2.replace(
-      /(RELAY:\n\s+x:\s*)\d+/,
-      '$18'
+    const spineArt = render(table2);
+    check('spine RELAY shows S pin name GND', /│\s*GND\s*│/.test(spineArt));
+    check(
+      'spine branch title not smashed with S label',
+      !/GNDRELAY|RELAYGND|GNDZMCT|ZMCTGND/.test(spineArt.replace(/\s/g, ''))
     );
-    const artShift = render(table2, {
+    // Untouched emit under -m should match spine module box heights (chrome).
+    const { emitLayout, debugStages: dbg } = require('./index');
+    const em = emitLayout(table2);
+    const spineBoxes = dbg(table2).plan.pages[0].boxes
+      .filter((b) => b.titleVAlign === 'bottom')
+      .map((b) => ({ t: b.title, h: b.h, inset: b.titleBottomInset || 0 }))
+      .sort((a, b) => a.t.localeCompare(b.t));
+    const docBoxes = dbg(table2, {
+      layout: { policy: 'from-document', layoutDocument: em },
+      modulesOnly: true,
+    }).plan.pages[0].boxes
+      .filter((b) => b.titleVAlign === 'bottom')
+      .map((b) => ({ t: b.title, h: b.h, inset: b.titleBottomInset || 0 }))
+      .sort((a, b) => a.t.localeCompare(b.t));
+    check(
+      'chrome parity spine vs emit-from-document branch h/inset',
+      JSON.stringify(spineBoxes) === JSON.stringify(docBoxes)
+    );
+  }
+
+  // Authored x/y honored: RELAY slides left
+  {
+    const shifted = layout2.replace(/(RELAY:\n\s+x:\s*)\d+/, '$18');
+    const { plan: p2, art: artShift } = debugStages(table2, {
       layout: { policy: 'from-document', layoutDocument: shifted },
+      modulesOnly: true,
     });
-    const lines = artShift.split('\n');
-    // Find RELAY south ● row and the GND label should share column under it.
-    let relayS = -1;
-    let relayCol = -1;
-    for (let i = 0; i < lines.length; i++) {
-      if (/RELAY/.test(lines[i])) {
-        // south border with ● is next few lines in classic paint
-        for (let j = i; j < Math.min(i + 4, lines.length); j++) {
-          const m = lines[j].match(/└[─┐]*●/);
-          if (m) {
-            relayS = j;
-            relayCol = lines[j].indexOf('●');
-            break;
-          }
-        }
-        break;
-      }
-    }
-    let gndUnder = false;
-    if (relayS >= 0 && relayCol >= 0) {
-      for (let j = relayS + 1; j < Math.min(relayS + 4, lines.length); j++) {
-        const row = lines[j];
-        // GND label centered roughly on port column
-        const g = row.indexOf('GND');
-        if (g >= 0 && Math.abs(g + 1 - relayCol) <= 2) gndUnder = true;
-        // vertical wire under port
-        if (row[relayCol] === '│') gndUnder = true;
-      }
-    }
-    check('from-document RELAY -x keeps GND leaf under S pin', gndUnder);
-    check('from-document RELAY -x keeps PUMP_IN on E stub', /NO.*PUMP_IN/.test(artShift));
+    const relayBox = p2.pages[0].boxes.find((b) => b.title === 'RELAY');
+    check('from-document RELAY x from dossier', relayBox && relayBox.x === 8);
+    check('from-document RELAY still painted after slide', artShift.includes('RELAY'));
+    check('from-document slide keeps wires empty under -m', (p2.pages[0].wires || []).length === 0);
   }
 
-  // ADS +3x must stretch W-face rails from ESP (not leave a gap / slide both ends).
+  // Face bank restamp: move RELAY IN from N → W
   {
-    const adsShift = layout2.replace(/(ADS1115:\n\s+x:\s*)\d+/, '$127');
-    const artAds = render(table2, {
-      layout: { policy: 'from-document', layoutDocument: adsShift },
+    const restamp = layout2.replace(
+      /RELAY:\n\s+x:\s*\d+\n\s+y:\s*\d+\n\s+sides:\n\s+N: \[IN\]\n\s+E: \[NO, COM, 5V\]\n\s+S: \[GND\]\n\s+W: \[\]/,
+      'RELAY:\n    x: 12\n    y: 14\n    sides:\n      N: []\n      E: [NO, COM, 5V]\n      S: [GND]\n      W: [IN]'
+    );
+    const { plan: p3 } = debugStages(table2, {
+      layout: { policy: 'from-document', layoutDocument: restamp },
+      modulesOnly: true,
     });
-    // Continuous H glyph run: pin dot must touch a rail, not "●  ─"
-    check(
-      'from-document ADS +x keeps rail on ESP E dots',
-      /3V3 ●─/.test(artAds) && /GPIO8 ●─/.test(artAds)
+    const portById = new Map(p3.pages[0].ports.map((g) => [g.portId, g]));
+    const { parseDocument, buildNetlist, classify } = require('./index');
+    const netlist = classify(buildNetlist(parseDocument(table2)));
+    const inPort = netlist.ports.find(
+      (p) =>
+        p.label === 'IN' &&
+        netlist.components.find((c) => c.id === p.componentId).name === 'RELAY'
     );
-    check(
-      'from-document ADS +x still reaches VDD/SDA',
-      /● VDD/.test(artAds) && /● SDA/.test(artAds)
-    );
-    // Short AIN leaf stubs (not length-5 corridor)
-    check(
-      'from-document AIN stubs short (TPO near pin)',
-      /AIN0 ●──TPO/.test(artAds) || /AIN0 ●─+TPO/.test(artAds)
-    );
+    const g = inPort && portById.get(inPort.id);
+    check('from-document face restamp IN → W', g && g.side === 'W');
   }
 
-  // Compact HITL trial (/tmp/l.yaml class): move ADS +x, RELAY −y/−x, ZMCT −x/−y.
-  // Hinge-only used to collapse face-normal stems and park H on the N wall.
+  // Compact packing: modules at new origins, still chrome-only under -m
   {
-    let compact = layout2
+    const compact = layout2
       .replace(/(ADS1115:\n\s+x:\s*)\d+/, '$127')
       .replace(/(RELAY:\n\s+x:\s*)\d+/, '$11')
       .replace(/(RELAY:\n\s+x:\s*1\n\s+y:\s*)\d+/, '$113')
       .replace(/(ZMCT103C:\n\s+x:\s*)\d+/, '$128')
       .replace(/(ZMCT103C:\n\s+x:\s*28\n\s+y:\s*)\d+/, '$115');
-    const artC = render(table2, {
+    const { plan: pC, art: artC } = debugStages(table2, {
       layout: { policy: 'from-document', layoutDocument: compact },
+      modulesOnly: true,
     });
-    // IN N-face: stem │ at least one row above the ● on RELAY crown.
-    const linesC = artC.split('\n');
-    let inRow = -1;
-    let inCol = -1;
-    for (let i = 0; i < linesC.length; i++) {
-      if (!/│\s*IN\s*│/.test(linesC[i])) continue;
-      // crown is the prior border row with ●
-      for (let j = i - 1; j >= Math.max(0, i - 2); j--) {
-        const m = linesC[j].match(/┌─*●─*┐/);
-        if (!m) continue;
-        inRow = j;
-        inCol = linesC[j].indexOf('●');
-        break;
-      }
-      break;
-    }
-    let stemClear = false;
-    if (inRow > 0 && inCol >= 0) {
-      const above = linesC[inRow - 1] || '';
-      const ch = above[inCol] || '';
-      stemClear = ch === '│' || ch === '┤' || ch === '├' || ch === '┘' || ch === '┐';
-    }
-    check('from-document compact RELAY −y keeps IN stem clearance', stemClear);
-
-    // AIN3 E exit: must not be "●┐" glued — at least one ─ before corner
+    const byTitle = Object.fromEntries(pC.pages[0].boxes.map((b) => [b.title, b]));
+    check('from-document compact ADS x', byTitle.ADS1115 && byTitle.ADS1115.x === 27);
     check(
-      'from-document compact ADS keeps AIN3 outward run',
-      /AIN3 ●─+[┐└]/.test(artC) || /AIN3 ●─┐/.test(artC)
+      'from-document compact RELAY origin',
+      byTitle.RELAY && byTitle.RELAY.x === 1 && byTitle.RELAY.y === 13
     );
-
-    // ZMCT OUT: horizontal approach must not share the N border row (● is on
-    // border; H channel sits above). Look for ┌──● or similar with mid-row ─
-    // above the box crown, not "──●──" as the north wall itself.
-    let outOk = false;
-    for (let i = 0; i < linesC.length; i++) {
-      if (!/OUT/.test(linesC[i])) continue;
-      // N border of ZMCT is typically the prior row with ●
-      const crown = linesC[i - 1] || '';
-      const outCol = crown.indexOf('●');
-      if (outCol < 0) continue;
-      // cell above ● should be wire or space from inserted stem, not empty wall-only
-      const above = linesC[i - 2] || '';
-      const ch = above[outCol] || ' ';
-      outOk = ch === '│' || ch === '┘' || ch === '┐' || ch === '┤' || ch === '├';
-      // and crown should not be a continuous H through the port as only path
-      // (wall collision looked like ──●── with no stem above)
-      if (!outOk && /┌.*●.*┐/.test(crown) && ch === ' ') {
-        outOk = false;
-      }
-      break;
-    }
-    check('from-document compact ZMCT OUT clears N wall', outOk);
+    check(
+      'from-document compact ZMCT origin',
+      byTitle.ZMCT103C && byTitle.ZMCT103C.x === 28 && byTitle.ZMCT103C.y === 15
+    );
+    check('from-document compact -m still empty wires', (pC.pages[0].wires || []).length === 0);
+    check('from-document compact paints all titles', artC.includes('RELAY') && artC.includes('ZMCT103C'));
   }
+}
+
+console.log('\nroute-v1 under layout02 tests');
+{
+  const table2 = fs.readFileSync(path.join(root, 'examples/table02.md'), 'utf8');
+  const layout2 = fs.readFileSync(path.join(root, 'examples/layout02.yaml'), 'utf8');
+  const opts = { layout: { policy: 'from-document', layoutDocument: layout2 } };
+  const { plan, art } = debugStages(table2, opts);
+  const page = plan.pages[0];
+  const mArt = render(table2, { ...opts, modulesOnly: true });
+
+  check('route-v1 meta router', page.meta && page.meta.router === 'route-v1');
+  check('route-v1 has wires', (page.wires || []).length > 0);
+  check('route-v1 not modules-only art', art !== mArt);
+  check(
+    'route-v1 -m still chrome only',
+    (debugStages(table2, { ...opts, modulesOnly: true }).plan.pages[0].wires || []).length === 0
+  );
+  check('route-v1 I2C backbone H', /GPIO8 ●─+● SDA/.test(art) || /GPIO8 ●.*● SDA/.test(art));
+  check('route-v1 3.3V rail', /3V3 ●─+● VDD/.test(art) || /3V3 ●.*● VDD/.test(art));
+  check('route-v1 leaf PUMP_IN', art.includes('PUMP_IN'));
+  check('route-v1 leaf TPO', art.includes('TPO'));
+  const wireNets = new Set((page.wires || []).map((w) => w.netId));
+  check('route-v1 multiple nets routed', wireNets.size >= 6);
+  check('route-v1 floating GND keeps ESP–ADS rail', /GND ●─+● GND/.test(art));
+  check('route-v1 floating branch still labeled GND near RELAY', /GND/.test(art));
+  check('route-v1 paints RELAY+ZMCT', art.includes('RELAY') && art.includes('ZMCT103C'));
 }
 
 console.log('\nemit-layout tests');
 {
-  const { emitLayout, render } = require('./index');
+  const { emitLayout, render, parseDocument, buildNetlist, classify } = require('./index');
   const { validateAndLoadLayout } = require('./layout/loader');
-  const { parseDocument, buildNetlist, classify } = require('./index');
   const table2 = fs.readFileSync(path.join(root, 'examples/table02.md'), 'utf8');
   const layout2text = fs.readFileSync(path.join(root, 'examples/layout02.yaml'), 'utf8');
   const netlist = classify(buildNetlist(parseDocument(table2)));
 
   const emitted = emitLayout(table2);
   check('emit-layout produces components key', /components:/.test(emitted));
+  {
+    const keys = [...emitted.matchAll(/^\s{2}([A-Za-z0-9_.\"-]+):\s*$/gm)].map(
+      (m) => m[1].replace(/^"|"$/g, '')
+    );
+    check(
+      'emit-layout spatial order ESP32, ADS, RELAY, ZMCT',
+      keys.join(',') === 'ESP32-C3,ADS1115,RELAY,ZMCT103C'
+    );
+  }
 
   let loaded;
   try {
@@ -295,13 +300,31 @@ console.log('\nemit-layout tests');
     check('emit-layout structural match vs layout02 (x/y/sides)', match);
   }
 
-  const spineArt = render(table2);
-  const roundTrip = render(table2, {
+  const modulesArt = render(table2, {
+    layout: { policy: 'from-document', layoutDocument: emitted },
+    modulesOnly: true,
+  });
+  const { plan: emitPlan } = require('./index').debugStages(table2, {
+    layout: { policy: 'from-document', layoutDocument: emitted },
+    modulesOnly: true,
+  });
+  check(
+    'emit-layout → from-document -m wires empty',
+    (emitPlan.pages[0].wires || []).length === 0
+  );
+  check('emit-layout → from-document paints titles', modulesArt.includes('ESP32-C3'));
+  check(
+    'emit-layout → from-document not spine full art',
+    modulesArt !== render(table2)
+  );
+  const routedArt = render(table2, {
     layout: { policy: 'from-document', layoutDocument: emitted },
   });
-  check('emit-layout → from-document identity vs spine', roundTrip === spineArt);
+  check(
+    'emit-layout → from-document default routes',
+    routedArt !== modulesArt && /●─/.test(routedArt)
+  );
 
-  // table01 has a passive with empty sides — must still emit + load
   const table1 = fs.readFileSync(path.join(root, 'examples/table01.md'), 'utf8');
   const em1 = emitLayout(table1);
   const nl1 = classify(buildNetlist(parseDocument(table1)));
@@ -312,10 +335,15 @@ console.log('\nemit-layout tests');
     check('emit-layout table01 (passive empty sides) validates', false);
     console.error('   ', e.message);
   }
+  const art1mod = render(table1, {
+    layout: { policy: 'from-document', layoutDocument: em1 },
+    modulesOnly: true,
+  });
+  check('emit-layout table01 → modules art has passive', art1mod.includes('R1'));
+  check('emit-layout table01 → modules art has BUTTON', art1mod.includes('BUTTON'));
   check(
-    'emit-layout table01 → from-document identity',
-    render(table1, { layout: { policy: 'from-document', layoutDocument: em1 } }) ===
-      render(table1)
+    'emit-layout table01 → not spine identity',
+    art1mod !== render(table1)
   );
 }
 

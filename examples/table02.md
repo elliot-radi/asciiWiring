@@ -8,7 +8,9 @@ terminal blocks, 100k dividers) and mains/load-side terminal blocks are
 `PUMP_IN` / `PUMP_OUT`. See `docs/TODO.md` for the expanded channel ladder
 (`table03+`).
 
-Hand target art: `examples/art02.md`. Generator snapshot: `golden02.md`.
+Hand target art: `examples/art02.md`. Packing seed: `examples/layout02.yaml`.
+Bootstrap goldens: regen after shared chrome (see `docs/STATUS.md`) — none
+checked in until then.
 
 Placeholders: `GPIO4` = ADS1115 ADDR strap driver; `GPIO3` = relay IN.
 Adjust when hardware pin map is frozen.
@@ -18,9 +20,9 @@ Adjust when hardware pin map is frozen.
 | I2C DATA   | GPIO8    | SDA     |          |       |
 | I2C CLOCK  | GPIO9    | SCL     |          |       |
 | I2C ADDR   | GPIO4    | ADDR    |          |       |
-| TPO        |          | AIN0    |          |       |
-| TPU        |          | AIN1    |          |       |
-| AMB        |          | AIN2    |          |       |
+| °TPO       |          | AIN0    |          |       |
+| °TPU       |          | AIN1    |          |       |
+| °AMB       |          | AIN2    |          |       |
 | CURRENT    |          | AIN3    | OUT      |       |
 | RELAY_CMD  | GPIO3    |         |          | IN    |
 | °PUMP_IN   |          |         |          | NO    |

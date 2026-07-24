@@ -6,10 +6,10 @@
 (human-in-the-loop), [ARCHITECTURE.md](ARCHITECTURE.md) (pipeline seams),
 [GLYPHS.md](GLYPHS.md) (drawing conventions).
 
-Schema sketch: [`examples/layout02.yaml`](../examples/layout02.yaml) — **not
-loaded by the CLI or library yet**. This file freezes the shape before any
-loader/route code is written, so implementation can proceed in testable
-slices.
+Reference dossier: [`examples/layout02.yaml`](../examples/layout02.yaml).
+Loaded by CLI as `TABLE.md LAYOUT.yaml` → `from-document` (+ `route-v1`
+unless `-m`). Schema here is normative; the example is a living seed, not a
+historical sketch.
 
 ---
 
@@ -57,18 +57,24 @@ ascw [flags] TABLE.md [LAYOUT.yaml]
 |------------|----------|--------|-----|
 | `ascw TABLE.md` | none (bootstrap) | spine-v1 full | bootstrap full |
 | `ascw --emit-layout TABLE.md` | write layout YAML | place seed only | YAML stdout |
-| `ascw TABLE.md LAYOUT.yaml` | layout document | place → **route** → paint | full pipeline; route may be no-op |
+| `ascw TABLE.md LAYOUT.yaml` | layout document | place → **route-v1** → paint | full pipeline |
 | `ascw -m TABLE.md LAYOUT.yaml` | layout document | place → paint | modules chrome only |
 
 **Only modules-art flag (no wires):** `-m` / `--modules-only`. **No `--route`.**
 Routed art is default when a layout file is present and `-m` is absent.
 
 Under a layout file, HITL **does not** morph spine wire lists into truth.
-Interconnect is only the route stage (no-op or real).
+Interconnect is only the route stage (`route-v1`, or off under `-m`).
 
-**Gap:** `ascw` grammar, modules-from-dossier, and no-op route are not
-implemented; transitional `--layout` + spine-slide may still exist. Debt, not
-contract.
+**Current code:** modules-from-dossier place; **route-v1** runs by default
+under a layout file (`-m` / `--modules-only` skips route). CLI accepts
+`TABLE.md [LAYOUT.yaml]`, `-m`, and deprecated `--layout FILE`. Binary may
+still be `node src/render.js` (not yet `ascw`).
+
+**Chrome parity:** shared `src/layout/chrome.js` (`sizeChrome`) for spine and
+from-document (branch height, N/S pin-label rows, title clearance). Untouched
+emit under `-m` should match spine branch `h` / `titleBottomInset` (selftest).
+Router quality / floating policy polish ongoing (STATUS).
 
 ---
 
@@ -228,13 +234,15 @@ ascw -m examples/table02.md my-layout.yaml       # modules only
 
 `--emit-layout` dumps a valid Mode B document from the **current auto-place
 policy (`spine-v1`)**: every component, every named pin banked onto the same
-face spine chose, `x`/`y` from box origins. Implementation
+face spine chose, `x`/`y` from box origins. Component keys are emitted in
+**spatial draw order** (top→bottom, then left→right) so the YAML tracks how
+modules read on the page — not table column order. Implementation
 (`src/layout/emit.js`) reads `PortGeom` + boxes on the layout plan; it does
 not invent placement. Anonymous `x` ports stay off `sides` (empty banks on
 passives). Hand reference: `examples/layout02.yaml`.
 
-**Gap:** until `ascw` lands, transitional `node src/render.js --emit-layout` /
-`--layout FILE` may still work.
+**Current:** `node src/render.js --emit-layout` and
+`node src/render.js TABLE.md LAYOUT.yaml` (also `-m`). **Gap:** `ascw` bin name.
 
 ---
 
@@ -244,12 +252,16 @@ Tracks layout-document contract vs pipeline ([rfc/004](rfc/004-hitl-place-loop-a
 
 - [x] Loader + validate layout YAML vs netlist (census, schema errors per §6)
 - [x] Bootstrap `--emit-layout` seeds dossiers from spine box origins + face banks
-- [ ] **`ascw` bin** + grammar `TABLE.md [LAYOUT.yaml]` + `-m` / `--modules-only`
-- [ ] Modules-from-dossier place under layout file
-- [ ] Route stage hook (no-op first; real router later — **no `--route` flag**)
-- [ ] Drop spine wire morph under layout file
+- [x] Grammar `TABLE.md [LAYOUT.yaml]` + `-m` / `--modules-only` (via `render.js`)
+- [x] Modules-from-dossier place under layout file
+- [x] Drop spine wire morph under layout file
+- [x] Selftests: modules-only packing (`-m`); structural table01/02 + layout02
+- [x] Real router MVP (`route-v1`) behind default table+layout (**no `--route`**)
+- [x] Shared chrome helper (`layout/chrome.js`) + chrome parity selftest
+- [ ] Floating route policy matches spine (bus rails; branch stubs — no ° trees)
+- [ ] Router quality: same-face multi-pin nets, corridor choice
+- [ ] **`ascw` bin** alias (optional rename; behavior already on `render.js`)
 - [ ] Emit optional reference `w`/`h`; loader accept/ignore until override policy
-- [ ] Selftests: layout-aware packing; spine goldens for table-only CLI
 - [ ] NTC-style fixture for repeated small components / boundary placement
 
 ---

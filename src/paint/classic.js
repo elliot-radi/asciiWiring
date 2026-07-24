@@ -130,8 +130,11 @@ function drawBox(g, put, border, b) {
   const t = ` ${title}`;
   const tx = x + 1;
   // Default top title (bus modules). Branch modules may set titleVAlign:'bottom'.
+  // titleBottomInset: shift bottom title up so S-face pin labels own y+h-2.
   const ty =
-    b.titleVAlign === 'bottom' ? y + h - 2 : y + 1;
+    b.titleVAlign === 'bottom'
+      ? y + h - 2 - (b.titleBottomInset || 0)
+      : y + 1;
   for (let i = 0; i < t.length && i < w - 2; i++) {
     put(tx + i, ty, t[i], PRI.text);
   }
@@ -207,7 +210,7 @@ function resolveJunctions(g, put, border) {
  * Top + vertical wire → ┴ (wire comes from above into cabinet)
  * Bottom + vertical → ┬
  * Left + horizontal → ├  (wire from west into box) — art often wants ┤? 
- *   art01: ├──────────┤ 10k west edge is ┤ meaning wire approaches from west
+ *   art01: ├──────────┤ R1 west edge is ┤ meaning wire approaches from west
  *   So Left border + H wire → ┤
  * Right + H → ├
  */
@@ -267,15 +270,27 @@ function placePinLabels(page, put) {
       const padded = ' ' + text;
       for (let i = 0; i < padded.length; i++) put(start + i, p.y, padded[i], PRI.text);
     } else if (p.side === 'N' || p.side === 'S') {
-      // Module boxes with bottom titles already place N-label / free S-net text
-      // via layout labels — drawing S pin text on title row got "BUTTON"+"GND"
-      // smashed into "BUGNDN". Skip interior N/S pin text for those boxes.
+      // Interior N/S pin names (e.g. IN on crown, GEE/GND on south).
+      // Bottom-title branches used to skip entirely so "BUTTON"+"GND" would not
+      // smash; now chrome may set titleBottomInset so S owns the last interior
+      // row. Still skip when the chosen row is the title row (legacy short boxes).
       const box = page.boxes.find(
         (b) => p.x >= b.x && p.x < b.x + b.w && p.y >= b.y && p.y < b.y + b.h
       );
-      if (!box || box.titleVAlign === 'bottom') continue;
+      if (!box) continue;
+      const titleTy =
+        box.titleVAlign === 'bottom'
+          ? box.y + box.h - 2 - (box.titleBottomInset || 0)
+          : box.y + 1;
+      let ty;
+      if (p.side === 'N') {
+        // Branch: just under top border; bus/top-title: below title blank row.
+        ty = box.titleVAlign === 'bottom' ? box.y + 1 : box.y + 2;
+      } else {
+        ty = box.y + box.h - 2;
+      }
+      if (ty === titleTy) continue;
       const tx = box.x + Math.max(1, Math.floor((box.w - text.length) / 2));
-      const ty = p.side === 'N' ? box.y + 2 : box.y + box.h - 2;
       for (let i = 0; i < text.length; i++) put(tx + i, ty, text[i], PRI.text);
     }
   }

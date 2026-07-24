@@ -62,9 +62,11 @@ glyph kinds is worth more than the vertical space a bracket-only form would
 save, and it keeps every component drawable without a second rendering path
 for vertical wire runs.
 
-**Labeling:** reference designator (refdes) inside the box, spec lives in a
-side table — never both in the diagram at once. This mirrors standard
-schematic reference-designator convention rather than inventing one:
+**Labeling (house convention):** short **`TYPENUM`** in the **table column
+header** — that string is the box title (`R1`, `C2`, `TB1`). Value /
+tolerance / wattage / pitch live in **footnotes or prose only**, never in the
+header and never as floating exterior labels next to the body. Compact and
+economical to draw; no second exterior name channel for passives.
 
 | Prefix | Component      |
 | ------ | -------------- |
@@ -78,17 +80,16 @@ schematic reference-designator convention rather than inventing one:
 | `J`/`P`| Connector/jack |
 | `F`    | Fuse           |
 
-Side table (spec mapping) lives alongside the wiring table, same doc or a
-sibling file:
+Example footnotes (not parsed as geometry):
 
 ```
-| Ref | Type      | Value       |
-|-----|-----------|-------------|
-| R1  | Resistor  | 10K 1/8W 5% |
-| TB1 | Terminal  | 2-pos 5mm   |
+Abbreviations:
+  R1 ≝ "10kΩ 1/8W 5%"
+  TB1 ≝ "2-pos 5mm"
 ```
 
-Rendered example:
+Or a free-form note / side table in the same Markdown doc — still electrics
+outside the matrix. Rendered body:
 
 ```
     │
@@ -98,9 +99,10 @@ Rendered example:
     │
 ```
 
-**Gap:** Passive refdes-in-box rendering and side-table parsing are not yet
-implemented. The prefix conventions and side-table format above are design
-conventions only; parser and render support does not exist.
+**Today:** column header → box title works without extra machinery
+(`examples/table01.md` uses `R1`).  
+**Gap:** dedicated side-table parse / layout `refdes:` / `specs:` keys and
+enforcement of the prefix list — not required for the convention above.
 
 ## Groups (composite glyphs)
 

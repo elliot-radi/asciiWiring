@@ -27,3 +27,4 @@ package-lock.json
 #ephemera
 *.zip
 temp/
+examples_archive

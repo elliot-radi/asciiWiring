@@ -9,9 +9,10 @@
 This document defines the **author-facing electrical language** (the Markdown
 connectivity table) and the **meaning** a correct tool must preserve when
 drawing. It does **not** mandate character coordinates. Geometry lives outside
-the table (bootstrap `spine-v1` today; nested layout sidecar next — see
-[LAYOUT.md](LAYOUT.md) for the schema contract, rfc/001 for workflow, and
-`examples/layout02.yaml` sketch; not CLI-loaded yet).
+the table (bootstrap `spine-v1` when no layout file; HITL place YAML via
+[LAYOUT.md](LAYOUT.md) — loaded as `TABLE.md LAYOUT.yaml`; schema contract
+and loader census. Workflow history: rfc/001; packing seed:
+`examples/layout02.yaml`).
 
 Art may vary so long as topology, labels, and diagram conventions are satisfied.
 
@@ -116,10 +117,12 @@ Do not merge rows implicitly.
 
 - One column = one component instance.
 - Header text = default box label (after abbreviation expansion for display if desired).
-- A short refdes header such as `R1`, `NTC1`, or `TB1` is legal; it is still
-  just the component instance identity in v1. The target refdes/spec metadata
-  convention is documented in GLYPHS, but its side-table grammar is not yet
-  normative or parsed.
+- **Passive (and compact part) headers** prefer short **`TYPENUM`** labels
+  (`R1`, `C2`, `NTC1`, `TB1`) — that string **is** the box title in art.
+  Electrical value / tolerance / wattage stay in footnotes or prose, **not**
+  in the column header and **not** as floating exterior labels beside the
+  body. See [GLYPHS.md](GLYPHS.md) §Modules / passives. Optional richer
+  side-table parse remains a Gap there; headers already paint as-is.
 - Column order is an **authoring** order; layout may reorder within policy limits (v1: try to respect bus column order left-to-right).
 
 ### 5.1 Abbreviations
@@ -165,8 +168,8 @@ A cell describes how a component participates in a net.
 - `x` is an **unlabeled port**, not a special “bridge” operator and not a wire.
 - A component with `x` on two different nets has **two ports on two nets**;
   its body is the only connection between those nets through that part.
-- `x` does not appear as pin text inside the box; the **component name**
-  carries identity (`10kΩ`).
+- `x` does not appear as pin text inside the box; the **component header**
+  carries identity (prefer short `R1`, not a value like `10k`).
 - Do **not** read `x` as “splice this wire.” The nets stay distinct;
   the passive sits **between** them.
 
@@ -331,14 +334,14 @@ Wrong (reads as four-way joins on GND and 3V3):
 └─────────────────────────────┘   │
 ```
 
-**Pullup shape (join + second net)** — BUTTON stem stays continuous; 10kΩ
-tees off beside it toward 3.3V:
+**Pullup shape (join + second net)** — BUTTON stem stays continuous; `R1`
+tees off beside it toward 3.3V (value belong in footnotes, not the box):
 
 ```
          │            3.3V
          │             │
          │          ┌──┴──┐
-         ├──────────┤ 10kΩ│   ├ = join on BUTTON
+         ├──────────┤ R1  │   ├ = join on BUTTON
          │          └─────┘
          │
       (button)
@@ -392,14 +395,14 @@ Input: `examples/table01.md`. Reference visual: `examples/art01.md`.
 | Component | Expected role |
 |-----------|----------------|
 | ESP32-C3 | Bus |
-| OLED | Bus |
+| SSD1306 OLED | Bus |
 | BUTTON | Branch on `BUTTON` net (and floating GND label) |
-| 10kΩ | Passive with terminals on `BUTTON` and `3.3V` |
+| R1 | Passive with terminals on `BUTTON` and `3.3V` |
 
 | Net | Kind | Draw intent |
 |-----|------|-------------|
 | I2C DATA / I2C CLOCK | Fixed | Horizontal between MCU and OLED |
-| BUTTON | Fixed | Stem MCU → tee → button; tee also feeds 10kΩ terminal |
+| BUTTON | Fixed | Stem MCU → tee → button; tee also feeds R1 terminal |
 | 3.3V / GND | Floating | Backbone runs OK when easy; free labels OK at button/pullup |
 
 Pin spelling in art follows the **table**. Renderer must not “correct”
@@ -421,6 +424,9 @@ or the table — table wins for generator output.
 1. Should floating `°` also suppress backbone painting by default?
 2. Pin order inside a box: table row order vs electrical convention (power top/bottom)?
 3. Are headers other than `Signal` accepted (`Net`, `Node`)?
-4. Unicode Ω in component names (yes for art; ensure UTF-8 stdout).
 
 Decisions land here when settled; until then implementers follow fixtures.
+
+**Settled (passive labels):** box title = short `TYPENUM` header (`R1`);
+value/tolerance only in footnotes — not exterior floating labels. UTF-8 in
+footnotes is fine; do not put `Ω` / value strings in live column headers.

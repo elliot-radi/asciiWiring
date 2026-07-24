@@ -198,21 +198,29 @@ Coordinates are **integer character cells**.
 ports. Schema contract: [LAYOUT.md](LAYOUT.md); example
 [examples/layout02.yaml](../examples/layout02.yaml); HITL history rfc/001.
 
-**Policy `from-document` / place file (transition):** loader validates the
-YAML against the netlist (census/schema). Historical bridge ran **spine-v1**
-then rigid-applied dossier `x`/`y` onto spine wires. That **wire morph is
-abandoned as the HITL quality path** ([rfc/004](rfc/004-hitl-place-loop-and-modules-only.md)).
+**Policy `from-document` / place file:** loader validates the YAML against the
+netlist (census/schema). `layoutFromDocument` builds module chrome from the
+dossier (`x`/`y`, face banks, derived `w`/`h`) and leaves `page.wires` empty
+for the place stage; `route-v1` fills wires unless `-m`. Spine wire morph
+under a layout file is gone
+([rfc/004](rfc/004-hitl-place-loop-and-modules-only.md)).
 
-**Target under a place file:**
+**Under a place file:**
 
 1. **Place loop** — glyph chrome (boxes, ports, labels) from dossier + table;
-   **no interconnect** until the route stage exists.
-2. **Route loop** *(Gap)* — ortho/stem router from fixed port sites; place YAML
-   unchanged across tries.
+   no interconnect until the route stage runs.
+2. **Route loop** — `route-v1` from fixed port sites (unless `-m`); place YAML
+   unchanged across tries. Floating nets should **rhyme with spine policy**
+   (collinear bus rails OK; branch pins stub + exterior net label — not an
+   MST home-run off the rail). Quality polish ongoing.
 
-**Gap:** modules-only packing render and place-file CLI defaults are not
-wired yet; code may still morph spine wires under `--layout`. Default CLI
-*without* a place file remains full **spine-v1** bootstrap. See §3.4.2.
+Default CLI *without* a place file remains full **spine-v1** bootstrap. See §3.4.2.
+
+**Chrome SoT:** `src/layout/chrome.js` (`sizeChrome`) — spine-v1 and
+from-document share branch sizing, N/S pin-label rows, and title clearance.
+Paint stays placer-agnostic (`titleVAlign` / `titleBottomInset`). Chrome
+parity on untouched emit is selftested; remaining cascade work is route /
+floating policy (STATUS).
 
 ### 3.4.1 Glyph build (target seam)
 
@@ -337,15 +345,15 @@ ugly. Spine full bootstrap remains the **no-file** path for simple fixtures.
                     full art paint
 ```
 
-- **Layout path (next):** place modules from dossier; route stage after place
-  (no-op until real router); paint. CLI: `ascw TABLE.md LAYOUT.yaml` or
-  `ascw -m …` for modules-only. Emit: `ascw --emit-layout TABLE.md`.
-- **Route stage:** pure interconnect from fixed ports; does not rewrite layout
-  YAML; **no `--route` flag** (default when layout present and not `-m`).
+- **Layout path:** place modules from dossier; **route-v1** after place
+  (unless `-m`); paint. CLI: `TABLE.md LAYOUT.yaml` or `-m …` for
+  modules-only. Emit: `--emit-layout TABLE.md`.
+  Transitional binary: `node src/render.js` (**Gap:** `ascw` name).
+- **Route stage (`src/layout/route-v1.js`):** pure interconnect from fixed
+  ports; does not rewrite layout YAML; **no `--route` flag** (default when
+  layout present and not `-m`). MVP: collinear H/V, face-exit + L elbows,
+  greedy MST, leaf stubs; hop via paint. Quality polish ongoing.
 - **Abandoned:** spine+slide / rigid wire morph as HITL interconnect strategy.
-
-**Gap:** `ascw` grammar, modules-from-dossier, no-op route not implemented;
-transitional `--layout` may still morph spine wires.
 
 Cross-refs: [LAYOUT.md](LAYOUT.md), [STATUS.md](STATUS.md),
 [rfc/004](rfc/004-hitl-place-loop-and-modules-only.md), §6 (hops).
@@ -392,14 +400,16 @@ Current / target shape (names indicative; split glyph/place/route next):
 
 ```
 src/
-  render.js              # CLI: [--debug] [--layout file.yaml] file.md
+  render.js              # CLI: [flags] TABLE.md [LAYOUT.yaml]
   parse.js               # Markdown table + footnotes
   model.js               # Ast → Netlist
   classify.js            # roles
   layout/
     spine-v1.js          # bootstrap constructive place+route (§3.4.2)
     loader.js            # layout YAML validate vs netlist (census)
-    from-document.js     # spine-first + rigid x/y apply
+    from-document.js     # modules-from-dossier place (chrome only)
+    route-v1.js          # route after place under layout file (unless -m)
+    emit.js              # --emit-layout YAML seed from plan PortGeom
   paint/
     grid.js
     classic.js
@@ -587,7 +597,10 @@ Install under `~/.pi/agent/skills/` only after the tool + layout loop is pleasan
 Pipeline modules exist under `src/` (parse, model, classify, layout/spine-v1,
 paint). Place and route are still largely fused in `spine-v1.js`.
 
-**Next structural work:** optional better non-identity moves after large dossier deltas; freeze layout02 as golden emit pair; NTC fixture pressure. `--emit-layout` implemented. Keep backbone spine default. `from-document` is spine-first overlay (identity bar in selftest). See LAYOUT.md §10.
+**Current:** modules-from-dossier + route-v1 under layout file (`-m` skips
+route); spine bootstrap when table-only; shared chrome (`layout/chrome.js`).
+**Next:** floating route = spine policy; cascade remainder; optional goldens
+via `npm run golden`. See LAYOUT.md §10 and STATUS.md.
 
 ---
 
