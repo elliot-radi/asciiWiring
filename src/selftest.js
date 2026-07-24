@@ -123,6 +123,134 @@ console.log('\nfrom-document policy tests');
   check('from-document has I2C backbone', art.includes('GPIO8') && art.includes('SDA'));
   check('from-document has 3V3-VDD run', art.includes('3V3') && art.includes('VDD'));
   check('from-document has branch IN pin', art.includes('IN'));
+
+  // Leaf stubs (S-face GND drop + E-face short stubs) must ride with box Δx/Δy.
+  // Regression: only the port vertex moved; free stub tip + net label stayed put.
+  {
+    // layout02 has RELAY at x:12; shift left like the hand trial at x:8
+    const shifted = layout2.replace(
+      /(RELAY:\n\s+x:\s*)\d+/,
+      '$18'
+    );
+    const artShift = render(table2, {
+      layout: { policy: 'from-document', layoutDocument: shifted },
+    });
+    const lines = artShift.split('\n');
+    // Find RELAY south ● row and the GND label should share column under it.
+    let relayS = -1;
+    let relayCol = -1;
+    for (let i = 0; i < lines.length; i++) {
+      if (/RELAY/.test(lines[i])) {
+        // south border with ● is next few lines in classic paint
+        for (let j = i; j < Math.min(i + 4, lines.length); j++) {
+          const m = lines[j].match(/└[─┐]*●/);
+          if (m) {
+            relayS = j;
+            relayCol = lines[j].indexOf('●');
+            break;
+          }
+        }
+        break;
+      }
+    }
+    let gndUnder = false;
+    if (relayS >= 0 && relayCol >= 0) {
+      for (let j = relayS + 1; j < Math.min(relayS + 4, lines.length); j++) {
+        const row = lines[j];
+        // GND label centered roughly on port column
+        const g = row.indexOf('GND');
+        if (g >= 0 && Math.abs(g + 1 - relayCol) <= 2) gndUnder = true;
+        // vertical wire under port
+        if (row[relayCol] === '│') gndUnder = true;
+      }
+    }
+    check('from-document RELAY -x keeps GND leaf under S pin', gndUnder);
+    check('from-document RELAY -x keeps PUMP_IN on E stub', /NO.*PUMP_IN/.test(artShift));
+  }
+
+  // ADS +3x must stretch W-face rails from ESP (not leave a gap / slide both ends).
+  {
+    const adsShift = layout2.replace(/(ADS1115:\n\s+x:\s*)\d+/, '$127');
+    const artAds = render(table2, {
+      layout: { policy: 'from-document', layoutDocument: adsShift },
+    });
+    // Continuous H glyph run: pin dot must touch a rail, not "●  ─"
+    check(
+      'from-document ADS +x keeps rail on ESP E dots',
+      /3V3 ●─/.test(artAds) && /GPIO8 ●─/.test(artAds)
+    );
+    check(
+      'from-document ADS +x still reaches VDD/SDA',
+      /● VDD/.test(artAds) && /● SDA/.test(artAds)
+    );
+    // Short AIN leaf stubs (not length-5 corridor)
+    check(
+      'from-document AIN stubs short (TPO near pin)',
+      /AIN0 ●──TPO/.test(artAds) || /AIN0 ●─+TPO/.test(artAds)
+    );
+  }
+}
+
+console.log('\nemit-layout tests');
+{
+  const { emitLayout, render } = require('./index');
+  const { validateAndLoadLayout } = require('./layout/loader');
+  const { parseDocument, buildNetlist, classify } = require('./index');
+  const table2 = fs.readFileSync(path.join(root, 'examples/table02.md'), 'utf8');
+  const layout2text = fs.readFileSync(path.join(root, 'examples/layout02.yaml'), 'utf8');
+  const netlist = classify(buildNetlist(parseDocument(table2)));
+
+  const emitted = emitLayout(table2);
+  check('emit-layout produces components key', /components:/.test(emitted));
+
+  let loaded;
+  try {
+    loaded = validateAndLoadLayout(emitted, netlist);
+    check('emit-layout validates via loader', true);
+  } catch (e) {
+    check('emit-layout validates via loader', false);
+    console.error('   ', e.message);
+  }
+
+  if (loaded) {
+    const hand = validateAndLoadLayout(layout2text, netlist);
+    const names = Object.keys(hand).sort();
+    check(
+      'emit-layout same component set as layout02',
+      names.join(',') === Object.keys(loaded).sort().join(',')
+    );
+    let match = true;
+    for (const n of names) {
+      if (hand[n].x !== loaded[n].x || hand[n].y !== loaded[n].y) match = false;
+      for (const f of ['N', 'E', 'S', 'W']) {
+        if (hand[n].sides[f].join('|') !== loaded[n].sides[f].join('|')) match = false;
+      }
+    }
+    check('emit-layout structural match vs layout02 (x/y/sides)', match);
+  }
+
+  const spineArt = render(table2);
+  const roundTrip = render(table2, {
+    layout: { policy: 'from-document', layoutDocument: emitted },
+  });
+  check('emit-layout → from-document identity vs spine', roundTrip === spineArt);
+
+  // table01 has a passive with empty sides — must still emit + load
+  const table1 = fs.readFileSync(path.join(root, 'examples/table01.md'), 'utf8');
+  const em1 = emitLayout(table1);
+  const nl1 = classify(buildNetlist(parseDocument(table1)));
+  try {
+    validateAndLoadLayout(em1, nl1);
+    check('emit-layout table01 (passive empty sides) validates', true);
+  } catch (e) {
+    check('emit-layout table01 (passive empty sides) validates', false);
+    console.error('   ', e.message);
+  }
+  check(
+    'emit-layout table01 → from-document identity',
+    render(table1, { layout: { policy: 'from-document', layoutDocument: em1 } }) ===
+      render(table1)
+  );
 }
 
 if (failed) {

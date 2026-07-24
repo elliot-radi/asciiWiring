@@ -70,10 +70,9 @@ not guaranteed art-director output — especially off-spine stacks.
 
 ## Current north star (sequence)
 
-1. Freeze layout contract (rfc/001 + `layout02` sketch); implement
-   **from-document** in slices (validate → glyphs/ports → route/paint) with
-   IR tests. See LAYOUT.md §10 checklist.
-2. Hand-edit trial on table02 (+ NTC fixture) **after** YAML obedience works
+1. Layout loader + spine-first from-document + **`--emit-layout`** are wired
+   (identity round-trip in selftest). See LAYOUT.md §9–§10.
+2. Hand-edit trial on table02 (+ later NTC fixture): emit → tweak x/y → `--layout`
 3. Distinguish schema-editing pain from slow visual feedback before choosing
    UX work
 4. Add layout-only grouping / boundary alignment as fixture pressure requires
@@ -99,7 +98,7 @@ not guaranteed art-director output — especially off-spine stacks.
 | Boundary alignment (`edge:` tag) | from-document path works | GLYPHS.md `Gap:` |
 | Browser GUI (Option E) | Hand-edit trial identifies YAML/feedback as bottleneck | rfc/001 target architecture |
 | Skill update for passive/table drafting | GLYPHS.md convention stable | skill/SKILL.md |
-| `render --emit-layout` helper | `from-document` route/paint must exist so the emitted file is testable end-to-end; seeds from current policy's `PortGeom`, not trivial grid. See LAYOUT.md §9 | LAYOUT.md §9 |
+| `render --emit-layout` helper | **done** — `src/layout/emit.js`, CLI `--emit-layout`; seeds from spine `PortGeom` | LAYOUT.md §9 |
 | Router collision complaints | from-document path works | LAYOUT.md §10 |
 | Multi-page / folded buses | V1 stable | rfc/000 later themes |
 | Validation beyond drawing (strict mode) | Separate checker design | rfc/000 §F |

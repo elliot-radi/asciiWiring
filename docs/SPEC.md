@@ -265,6 +265,10 @@ knowledgeable human agrees that:
 
 ### 9.1 Default glyph profile (`classic`)
 
+HITL **chrome vocabulary** (pin, stub, elbow, face, cell, junction, …):
+[GLYPHS.md](GLYPHS.md) § Chrome vocabulary. This section is the electrical
+paint alphabet only.
+
 v1 ships one paint profile:
 
 | Element | Default |

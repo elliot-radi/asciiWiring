@@ -623,7 +623,9 @@ function layoutDanglingStubs(ctx) {
     const g = portGeom.find((pg) => pg.portId === p.id);
     if (!g) continue;
 
-    const stubLen = 5;
+    // Match branch leaf stubs (placeBranchModule uses +2). Longer runs look
+    // like leftover corridor when modules shift under from-document.
+    const stubLen = g.side === 'S' || g.side === 'N' ? 2 : 2;
     let x2 = g.x;
     let y2 = g.y;
     let lx = g.x;

@@ -11,6 +11,9 @@
 .DS_Store
 Thumbs.db
 
+# CodeGraph local index
+.codegraph/
+
 # Node (future)
 node_modules/
 npm-debug.log*

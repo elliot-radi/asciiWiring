@@ -30,6 +30,7 @@ auto-layout as the bar. Do **not** re-thread layout overrides into
 node src/render.js examples/table01.md
 node src/render.js examples/table02.md
 node src/render.js --layout examples/layout02.yaml examples/table02.md
+node src/render.js --emit-layout examples/table02.md   # bootstrap layout YAML
 node src/render.js --debug examples/table02.md   # art stdout; IR summary stderr
 npm test                                         # src/selftest.js
 ```

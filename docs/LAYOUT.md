@@ -111,6 +111,9 @@ Rules:
 
 ## 4. Face and edge order
 
+On-screen reading of faces, pins, and boxes: [GLYPHS.md](GLYPHS.md) § Chrome
+vocabulary. This section is the layout-document rule for list order only.
+
 | Face | Edge traversal     |
 |------|--------------------|
 | `N`  | left → right       |
@@ -199,19 +202,23 @@ When one of these is specced, it moves out of this list and into §3.
 
 ---
 
-## 9. Authoring path (bootstrap emit — planned)
+## 9. Authoring path (bootstrap emit)
 
 Because Mode B requires a full dossier per component, hand-writing the first
-file is tedious. A future command (provisional: `render --emit-layout`) will
-dump a valid initial dossier from the netlist: every component, every named
-pin banked onto the **same face the current auto-place policy (`spine-v1`)
-would choose**, `x`/`y` seeded from the *existing* automated layout. The
-tool inspects the `PortGeom` produced by the selected auto-place policy; it
-does not invent placement logic independently. The human then moves boxes and
-re-banks pins; they never type pin names from scratch.
+file is tedious. CLI:
 
-This is not built yet. Until it exists, `examples/layout02.yaml` is the
-hand-authored reference for `table02`.
+```bash
+node src/render.js --emit-layout examples/table02.md > my-layout.yaml
+node src/render.js --layout my-layout.yaml examples/table02.md
+```
+
+`--emit-layout` dumps a valid Mode B document from the **current auto-place
+policy (`spine-v1`)**: every component, every named pin banked onto the same
+face spine chose, `x`/`y` from box origins. Implementation
+(`src/layout/emit.js`) reads `PortGeom` + boxes on the layout plan; it does
+not invent placement. Anonymous `x` ports stay off `sides` (empty banks on
+passives). Round-trip: emit → `--layout` must match default CLI art when the
+human has not edited yet (selftest). Hand reference: `examples/layout02.yaml`.
 
 ---
 
@@ -226,9 +233,9 @@ sidecar and the pipeline.
 - [x] Build/apply geometry from layout (spine-first course correction; no parallel router)
 - [x] Route + paint via spine-v1; from-document rigid x/y overlay + loader census
   (identity when YAML matches spine — locked in selftest)
-- [ ] **Bootstrap emit helper (`--emit-layout`)** — seed dossiers from spine-v1
-  `PortGeom` + box origins (table02 emission should match layout02). Blocked
-  only on CQ; from-document identity path already exists for round-trip tests.
+- [x] **Bootstrap emit helper (`--emit-layout`)** — seed dossiers from spine-v1
+  `PortGeom` + box origins (table02 emission matches layout02 structure;
+  emit → from-document identity locked in selftest)
 - [ ] Freeze `layout02` as golden emit+from-document pair; keep spine as default
 - [ ] Improve non-identity rigid moves (stem elbows / intermediate colums that
   are not port cells may need a touch-up pass after large x/y deltas)

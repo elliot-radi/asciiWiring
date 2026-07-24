@@ -5,9 +5,41 @@
 and [LAYOUT.md](LAYOUT.md); normative table-language changes belong in
 [SPEC.md](SPEC.md).
 
-This doc is the home for *how a component becomes a glyph* — box shape, labeling,
-and composition — as distinct from *where the glyph goes* (rfc/001) or *what's
-legal in the wiring table* (SPEC.md).
+This doc is the home for *how the diagram looks on the character grid* — chrome
+vocabulary (HITL hand-edit and art review), box shape, labeling, and composition —
+as distinct from *where the box goes* (rfc/001 / [LAYOUT.md](LAYOUT.md)) or
+*what's legal in the wiring table* ([SPEC.md](SPEC.md)). Place/route engine
+seams stay in [ARCHITECTURE.md](ARCHITECTURE.md).
+
+## Chrome vocabulary (HITL)
+
+On-screen language for reading art and discussing hand layout edits. Prefer
+these terms unless debugging electrical IR or place/route internals — then say
+so explicitly. Engine-only words (stem, backbone rail, hinge, …) live in
+implementation notes and [ARCHITECTURE.md](ARCHITECTURE.md), not here.
+
+| Term | Meaning |
+|------|---------|
+| **cell** | One ASCII character grid position; unit of length and alignment ("about two cells too long", "middle cell of the N face"). |
+| **chrome** | The visible ASCII art product (boxes, wires, labels as shown). |
+| **box** | Rectangle depicting a module or component. Synonym: **footprint**. |
+| **face** | One of the four walls of a box: N, E, S, W. Matches layout YAML face lists. Prefer over "bank" in prose. |
+| **face cell** | A single border cell on a face. Usually better to name the **pin** instead. |
+| **pin** | Named attachment on a box wall where a **wire** terminates (e.g. RELAY `IN`), typically with marker `●`. |
+| **port** | Bare-wall termination (e.g. passive side of a body) where a wire ends without a named pin marker; also a casual synonym for **pin** when talking about faces/YAML. |
+| **interior label** | Text inside a box (pin name, title / refdes). |
+| **net** | Name of a signal (one electrical identity). May be **floating**. May appear as an exterior label at a **stub**. |
+| **segment** | One horizontal or vertical run of a **wire**. |
+| **wire** | The entire drawn route from pin/port to pin/port or junction (all **segments** and **elbows** along the way; may pass a **hop** without joining). |
+| **stub** | Short protrusion (~1–2 cells) from a **pin** or **port**, free end, usually terminating next to a **net** name label (e.g. `●──TPO`, S-face drop to `GND`). Longer path → call it a **wire**, not a stub. |
+| **elbow** | A 90° turn on one **wire** (ortho corner glyphs). Not a junction. |
+| **junction** | Where three or more **wires** of the **same net** meet electrically. Cover term for tee and cross-join. |
+| **tee** | A three-way **junction** (`├┤┬┴`). |
+| **cross-join** | A four-way **junction** (`┼`) — rare; only one net. |
+| **hop** | Two different **nets** cross in one **cell** but do not connect (`\`). Never paint as a junction. |
+
+Join vs hop electrical paint rules: [SPEC.md](SPEC.md) §9. Layout face lists:
+[LAYOUT.md](LAYOUT.md).
 
 ## Glyph kinds
 

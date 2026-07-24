@@ -126,8 +126,11 @@ For contributor norms and agent rules, see [`AGENTS.md`](AGENTS.md).
 ```bash
 git clone <your-fork-or-remote> asciiWiring
 cd asciiWiring
+npm install
 node src/render.js examples/table01.md
 node src/render.js examples/table02.md
+node src/render.js --layout examples/layout02.yaml examples/table02.md
+node src/render.js --emit-layout examples/table02.md   # bootstrap layout YAML
 node src/render.js --debug examples/table02.md   # IR summary on stderr
 npm test                                         # → node src/selftest.js
 ```

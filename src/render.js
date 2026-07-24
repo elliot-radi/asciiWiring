@@ -1,20 +1,22 @@
 #!/usr/bin/env node
 /**
- * CLI: node src/render.js [--debug] [file.md]
- * Reads Markdown wiring table; writes ASCII art to stdout.
+ * CLI: node src/render.js [--debug] [--layout file.yaml] [--emit-layout] [file.md]
+ * Reads Markdown wiring table; writes ASCII art (or layout YAML) to stdout.
  */
 
 const fs = require('fs');
 const path = require('path');
-const { render, debugStages } = require('./index');
+const { render, debugStages, emitLayout } = require('./index');
 
 function usage(code = 1) {
-  const msg = `Usage: node src/render.js [--debug] [--layout <file.yaml>] [file.md]
+  const msg = `Usage: node src/render.js [options] [file.md]
 
   Reads a Markdown wiring table and prints ASCII art.
   With no file, reads stdin.
-  --debug     print stage summaries as JSON on stderr; art still on stdout
-  --layout    load layout sidecar YAML (policy: from-document)
+
+  --debug         stage summary JSON on stderr; art still on stdout
+  --layout FILE   load layout sidecar YAML (policy: from-document)
+  --emit-layout   print bootstrap layout YAML (from spine-v1 PortGeom) instead of art
 `;
   process.stderr.write(msg);
   process.exit(code);
@@ -22,12 +24,14 @@ function usage(code = 1) {
 
 function main(argv) {
   let debug = false;
+  let emit = false;
   let layoutFile = null;
   const files = [];
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a === '--help' || a === '-h') usage(0);
     else if (a === '--debug') debug = true;
+    else if (a === '--emit-layout') emit = true;
     else if (a === '--layout') {
       layoutFile = argv[++i];
       if (!layoutFile) {
@@ -56,6 +60,11 @@ function main(argv) {
   }
 
   try {
+    if (emit) {
+      // Seed from auto place; --layout is ignored for emit (fresh bootstrap seed).
+      process.stdout.write(emitLayout(text));
+      return;
+    }
     if (debug) {
       const stages = debugStages(text, options);
       const summary = {

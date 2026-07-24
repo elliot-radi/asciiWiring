@@ -39,7 +39,7 @@ Rules that apply to all layers:
 | `SPEC.md` | Contract | Table language syntax, electrical semantics, paint rules | Parser, syntax, or paint rules change | Roadmap items, implementation notes, examples beyond specification |
 | `ARCHITECTURE.md` | Contract | Pipeline stages, IR shapes, module seams | New pipeline stage or IR change | Priority lists, CLI tutorials, design rationale |
 | `LAYOUT.md` | Contract | Layout sidecar schema, valid keys, error modes, loader checklist | Schema changes, new loaders, new validations | HITL philosophy, GUI speculation, unscoped future keys |
-| `GLYPHS.md` | Contract | Drawing conventions, box rules, passive rendering; `Gap:` labels for unimplemented features | Paint or glyph logic changes | Unimplemented features without a `Gap:` label |
+| `GLYPHS.md` | Contract | Chrome vocabulary (HITL), drawing conventions, box rules, passive rendering; `Gap:` labels for unimplemented features | Paint, glyph, or shared on-screen terms change | Unimplemented features without a `Gap:` label; place/route engine jargon |
 | `AGENTS.md` (root) | Norms | Contributor rules, test commands, drift policy | Workflow or testing rules change | Current priorities, architecture details, any state that goes stale |
 | `rfc/000-electrical-model-and-pipeline.md` | History | Founding decisions: nets as hyperedges, derived roles, tee-vs-series passives, pipeline shape, no-Dagre heuristic | Never — append-only | Current status, how-to-build instructions |
 | `rfc/001-layout-sidecar-and-hitl.md` | History | Layout sidecar decision: options A–E, from-document path, hybrid overlay rejected, browser target scoped | Major layout reversals or new HITL decisions | Current status, normative schema (lives in `LAYOUT.md`) |
@@ -60,6 +60,7 @@ Use this when adding or editing documentation.
 | Update which fixtures exist and their status | `STATUS.md` |
 | Change the table language syntax | `SPEC.md` |
 | Change how boxes or passives are drawn | `GLYPHS.md` |
+| Agree HITL on-screen terms (pin, stub, face, cell, …) | `GLYPHS.md` § Chrome vocabulary |
 | Add a new pipeline stage or IR shape | `ARCHITECTURE.md` |
 | Explain why an old decision was wrong | New `rfc/NNN-*.md` referencing the old |
 

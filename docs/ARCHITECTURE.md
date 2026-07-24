@@ -376,6 +376,10 @@ Paint:
 - resolves **hops** (different nets, H∩V) into the profile hop glyph (`\\`);
 - never paints a join where net ids differ (see SPEC §9.2–9.3).
 
+On-screen names for reviewing that chrome (pin, stub, elbow, face, cell):
+[GLYPHS.md](GLYPHS.md) § Chrome vocabulary. Engine terms for constructive
+place/route remain in §3.4.2.
+
 Paint must not re-decide which component is a passive vs branch.
 
 #### Glyph profiles
@@ -596,7 +600,7 @@ Install under `~/.pi/agent/skills/` only after the tool + layout loop is pleasan
 Pipeline modules exist under `src/` (parse, model, classify, layout/spine-v1,
 paint). Place and route are still largely fused in `spine-v1.js`.
 
-**Next structural work:** `--emit-layout` (dump spine `PortGeom` + box x/y into YAML for HITL). Optional: better non-identity rigid moves after large dossier deltas. Keep spine as bootstrap default. `from-document` is spine-first overlay (identity bar in selftest). See LAYOUT.md §10.
+**Next structural work:** optional better non-identity moves after large dossier deltas; freeze layout02 as golden emit pair; NTC fixture pressure. `--emit-layout` implemented. Keep backbone spine default. `from-document` is spine-first overlay (identity bar in selftest). See LAYOUT.md §10.
 
 ---
 
